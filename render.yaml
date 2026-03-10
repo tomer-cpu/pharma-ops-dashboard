@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: pharma-ops-dashboard
+    runtime: python
+    buildCommand: pip install -r ops_dashboard/requirements.txt
+    startCommand: uvicorn ops_dashboard.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"

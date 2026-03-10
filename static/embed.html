@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pharma Operational Metrics Dashboard</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        /* Embed overrides - remove header/footer padding, compact layout */
+        body { overflow: auto; }
+        .header { padding: 8px 16px; min-height: auto; }
+        .header h1 { font-size: 16px; }
+        .header .subtitle { font-size: 11px; }
+        .header .logo { width: 28px; height: 28px; font-size: 10px; }
+        .filter-bar { padding: 6px 16px; gap: 8px; }
+        .tab-nav { padding: 0 16px; }
+        .main-content { padding: 12px 16px; }
+        .footer { display: none; }
+        .health-gauge-container { transform: scale(0.8); }
+    </style>
+</head>
+<body>
+    <!-- Header (compact) -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">OM</div>
+            <div class="header-title">
+                <h1>Operational Metrics</h1>
+                <div class="subtitle">Pharma Data Lake Dashboard</div>
+            </div>
+        </div>
+        <div class="header-center">
+            <div class="health-gauge-container" id="health-gauge"></div>
+        </div>
+        <div class="header-right">
+            <span id="last-updated">Loading...</span>
+            <button class="settings-btn" id="settings-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                Targets
+            </button>
+        </div>
+    </header>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <select id="filter-site"><option value="">All Sites</option></select>
+        <select id="filter-product"><option value="">All Products</option></select>
+        <div class="filter-separator"></div>
+        <div class="range-buttons">
+            <button class="range-btn" data-range="7d">7D</button>
+            <button class="range-btn active" data-range="30d">30D</button>
+            <button class="range-btn" data-range="90d">90D</button>
+            <button class="range-btn" data-range="365d">1Y</button>
+        </div>
+        <div class="filter-separator"></div>
+        <input type="date" id="filter-date-from" title="From date">
+        <span style="color: var(--text-muted); font-size: 12px;">to</span>
+        <input type="date" id="filter-date-to" title="To date">
+    </div>
+
+    <!-- Tab Navigation -->
+    <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="overview">Overview</button>
+        <button class="tab-btn" data-tab="quality">Quality</button>
+        <button class="tab-btn" data-tab="service">Service</button>
+        <button class="tab-btn" data-tab="cost">Cost</button>
+        <button class="tab-btn" data-tab="efficiency">Efficiency</button>
+        <button class="tab-btn" data-tab="risk">Risk</button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div id="tab-content">
+            <div style="text-align:center; padding:60px; color: var(--text-muted);">Loading dashboard...</div>
+        </div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Metric Targets &amp; KPI Selection</h2>
+                <button class="modal-close" id="settings-close">&times;</button>
+            </div>
+            <div class="modal-body" id="targets-form">
+                Loading targets...
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="settings-close-btn" onclick="document.getElementById('settings-modal').classList.remove('active')">Cancel</button>
+                <button class="btn-primary" id="settings-save">Save Targets</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/utils.js?v=4"></script>
+    <script src="/static/js/api.js?v=4"></script>
+    <script src="/static/js/kpi.js?v=4"></script>
+    <script src="/static/js/charts.js?v=4"></script>
+    <script src="/static/js/filters.js?v=4"></script>
+    <script src="/static/js/app.js?v=4"></script>
+</body>
+</html>
