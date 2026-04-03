@@ -319,18 +319,24 @@ async def get_drug_ndc(
 # ── Drug Shortages ──────────────────────────────────────────────
 
 def _parse_shortage(raw: Dict[str, Any]) -> DrugShortage:
+    # therapeutic_category is an array in the FDA response
+    tc = raw.get("therapeutic_category")
+    if isinstance(tc, str):
+        tc = [tc]
+
     return DrugShortage(
         generic_name=raw.get("generic_name"),
-        brand_name=raw.get("brand_name") or raw.get("brand_name_s"),
+        proprietary_name=raw.get("proprietary_name"),
         status=raw.get("status"),
         initial_posting_date=raw.get("initial_posting_date"),
-        updated_date=raw.get("updated_date") or raw.get("last_updated"),
-        dosage_form=raw.get("dosage_form") or raw.get("dosage_form_and_route"),
-        route=raw.get("route"),
-        therapeutic_category=raw.get("therapeutic_category"),
-        company_name=raw.get("company_name") or raw.get("firm_name"),
-        reason_for_shortage=raw.get("reason_for_shortage"),
-        estimated_resolution=raw.get("estimated_resolution_date"),
+        update_date=raw.get("update_date"),
+        dosage_form=raw.get("dosage_form"),
+        presentation=raw.get("presentation"),
+        therapeutic_category=tc,
+        company_name=raw.get("company_name"),
+        shortage_reason=raw.get("shortage_reason"),
+        resolved_note=raw.get("resolved_note"),
+        availability=raw.get("availability"),
     )
 
 
@@ -582,7 +588,6 @@ def _demo_shortages(limit: int, skip: int) -> ShortagesResponse:
     ]
 
     statuses = ["Currently in Shortage", "Currently in Shortage", "Currently in Shortage", "Resolved"]
-    resolution_estimates = ["Q2 2026", "Q3 2026", "Q4 2026", "TBD", None]
 
     for i in range(min(limit, len(shortage_data))):
         idx = (skip + i) % len(shortage_data)
@@ -591,18 +596,23 @@ def _demo_shortages(limit: int, skip: int) -> ShortagesResponse:
         year = random.randint(2023, 2025)
         month = random.randint(1, 12)
 
+        resolved = None
+        if status == "Resolved":
+            resolved = "Product is now available from all manufacturers."
+
         shortages.append(DrugShortage(
             generic_name=generic,
-            brand_name=brand,
+            proprietary_name=brand,
             status=status,
             initial_posting_date=f"{year}-{month:02d}-{random.randint(1,28):02d}",
-            updated_date=f"2026-{random.randint(1,3):02d}-{random.randint(1,28):02d}",
+            update_date=f"2026-{random.randint(1,3):02d}-{random.randint(1,28):02d}",
             dosage_form=form,
-            route="Oral" if "Oral" in form or "Capsule" in form or "Tablet" in form else "Injectable",
-            therapeutic_category=category,
+            presentation=f"{generic} {form}" if generic else form,
+            therapeutic_category=[category],
             company_name=random.choice(_DEMO_FIRMS),
-            reason_for_shortage=reason,
-            estimated_resolution=random.choice(resolution_estimates) if status == "Currently in Shortage" else None,
+            shortage_reason=reason,
+            resolved_note=resolved,
+            availability="Limited supply" if status == "Currently in Shortage" else "Available",
         ))
 
     return ShortagesResponse(total=total, skip=skip, limit=limit, shortages=shortages)

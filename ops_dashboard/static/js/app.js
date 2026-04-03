@@ -990,13 +990,14 @@ async function loadFdaShortages(params, resultsEl, chartsEl) {
                 <thead>
                     <tr>
                         <th>Generic Name</th>
-                        <th>Brand Name</th>
+                        <th>Proprietary Name</th>
                         <th>Status</th>
                         <th>Category</th>
                         <th>Dosage Form</th>
                         <th>Company</th>
-                        <th>Reason</th>
-                        <th>Est. Resolution</th>
+                        <th>Shortage Reason</th>
+                        <th>Availability</th>
+                        <th>Resolved Note</th>
                         <th>Updated</th>
                     </tr>
                 </thead>
@@ -1004,16 +1005,17 @@ async function loadFdaShortages(params, resultsEl, chartsEl) {
                     ${data.shortages.map(s => `
                     <tr>
                         <td><strong>${s.generic_name || '-'}</strong></td>
-                        <td>${s.brand_name || '-'}</td>
+                        <td>${s.proprietary_name || '-'}</td>
                         <td>${s.status === 'Currently in Shortage'
                             ? '<span class="fda-badge fda-badge-serious">In Shortage</span>'
                             : '<span class="fda-badge fda-badge-ok">Resolved</span>'}</td>
-                        <td>${s.therapeutic_category || '-'}</td>
+                        <td>${(s.therapeutic_category || []).join(', ') || '-'}</td>
                         <td>${s.dosage_form || '-'}</td>
                         <td>${s.company_name || '-'}</td>
-                        <td class="fda-reason">${s.reason_for_shortage || '-'}</td>
-                        <td>${s.estimated_resolution || '-'}</td>
-                        <td>${s.updated_date || '-'}</td>
+                        <td class="fda-reason">${s.shortage_reason || '-'}</td>
+                        <td>${s.availability || '-'}</td>
+                        <td class="fda-reason">${s.resolved_note || '-'}</td>
+                        <td>${s.update_date || '-'}</td>
                     </tr>`).join('')}
                 </tbody>
             </table>

@@ -110,16 +110,17 @@ class DrugNDC(BaseModel):
 
 class DrugShortage(BaseModel):
     generic_name: Optional[str] = None
-    brand_name: Optional[str] = None
+    proprietary_name: Optional[str] = None
     status: Optional[str] = None  # "Currently in Shortage", "Resolved"
     initial_posting_date: Optional[str] = None
-    updated_date: Optional[str] = None
+    update_date: Optional[str] = None
     dosage_form: Optional[str] = None
-    route: Optional[str] = None
-    therapeutic_category: Optional[str] = None
+    presentation: Optional[str] = None
+    therapeutic_category: Optional[List[str]] = None
     company_name: Optional[str] = None
-    reason_for_shortage: Optional[str] = None
-    estimated_resolution: Optional[str] = None
+    shortage_reason: Optional[str] = None
+    resolved_note: Optional[str] = None
+    availability: Optional[str] = None
 
 
 class ShortagesResponse(BaseModel):
