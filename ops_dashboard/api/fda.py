@@ -19,12 +19,14 @@ from ops_dashboard.services.fda_client import (
     close_client,
     count_adverse_events,
     count_drug_recalls,
+    count_drug_shortages,
     fda_count,
     fda_search,
     get_adverse_events,
     get_drug_labels,
     get_drug_ndc,
     get_drug_recalls,
+    get_drug_shortages,
 )
 from ops_dashboard.models.fda_schemas import (
     AdverseEventsResponse,
@@ -33,6 +35,7 @@ from ops_dashboard.models.fda_schemas import (
     LabelsResponse,
     NDCResponse,
     RecallsResponse,
+    ShortagesResponse,
 )
 
 router = APIRouter()
@@ -43,6 +46,7 @@ ALLOWED_ENDPOINTS = {
     "drug_label": "/drug/label.json",
     "drug_ndc": "/drug/ndc.json",
     "drug_enforcement": "/drug/enforcement.json",
+    "drug_shortages": "/drug/shortages.json",
     "device_event": "/device/event.json",
     "device_recall": "/device/recall.json",
     "device_classification": "/device/classification.json",
@@ -151,6 +155,37 @@ async def ndc(
     """National Drug Code directory search."""
     try:
         return await get_drug_ndc(search=search, limit=limit, skip=skip)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"FDA API error: {e}")
+
+
+# ── Drug Shortages ──────────────────────────────────────────────
+
+@router.get("/shortages", response_model=ShortagesResponse)
+async def shortages(
+    search: Optional[str] = Query(None, description="e.g. generic_name:amoxicillin"),
+    limit: int = Query(10, ge=1, le=100),
+    skip: int = Query(0, ge=0),
+):
+    """Drug shortage reports — currently in shortage and resolved."""
+    try:
+        return await get_drug_shortages(search=search, limit=limit, skip=skip)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"FDA API error: {e}")
+
+
+@router.get("/shortages/count", response_model=FDACountResponse)
+async def shortages_count(
+    field: str = Query(
+        "status.exact",
+        description="Field to count. Common: status.exact, therapeutic_category.exact",
+    ),
+    search: Optional[str] = Query(None),
+    limit: int = Query(10, ge=1, le=1000),
+):
+    """Count drug shortages grouped by a field."""
+    try:
+        return await count_drug_shortages(count_field=field, search=search, limit=limit)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"FDA API error: {e}")
 

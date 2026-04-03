@@ -106,6 +106,29 @@ class DrugNDC(BaseModel):
     listing_expiration_date: Optional[str] = None
 
 
+# ── Drug Shortages ─────────────────────────────────────────────
+
+class DrugShortage(BaseModel):
+    generic_name: Optional[str] = None
+    brand_name: Optional[str] = None
+    status: Optional[str] = None  # "Currently in Shortage", "Resolved"
+    initial_posting_date: Optional[str] = None
+    updated_date: Optional[str] = None
+    dosage_form: Optional[str] = None
+    route: Optional[str] = None
+    therapeutic_category: Optional[str] = None
+    company_name: Optional[str] = None
+    reason_for_shortage: Optional[str] = None
+    estimated_resolution: Optional[str] = None
+
+
+class ShortagesResponse(BaseModel):
+    total: int = 0
+    skip: int = 0
+    limit: int = 10
+    shortages: List[DrugShortage] = []
+
+
 # ── API response wrappers ───────────────────────────────────────
 
 class FDASearchResponse(BaseModel):

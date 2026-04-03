@@ -115,6 +115,8 @@ class ApiClient {
     getFdaRecallsCount(params) { return this.get('/api/fda/recalls/count', params); }
     getFdaLabels(params) { return this.get('/api/fda/labels', params); }
     getFdaNdc(params) { return this.get('/api/fda/ndc', params); }
+    getFdaShortages(params) { return this.get('/api/fda/shortages', params); }
+    getFdaShortagesCount(params) { return this.get('/api/fda/shortages/count', params); }
     getFdaSearch(params) { return this.get('/api/fda/search', params); }
     getFdaCount(params) { return this.get('/api/fda/count', params); }
 

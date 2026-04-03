@@ -710,6 +710,7 @@ async function renderFdaTab() {
                     <button class="fda-section-btn" data-fda="recalls">Recalls</button>
                     <button class="fda-section-btn" data-fda="labels">Drug Labels</button>
                     <button class="fda-section-btn" data-fda="ndc">NDC Directory</button>
+                    <button class="fda-section-btn" data-fda="shortages">Drug Shortages</button>
                 </div>
                 <div class="fda-search-bar">
                     <input type="text" id="fda-search-input" placeholder="Search query (e.g. patient.drug.medicinalproduct:aspirin)" value="${fdaState.search}">
@@ -775,6 +776,7 @@ async function loadFdaData() {
             case 'recalls': await loadFdaRecalls(params, resultsEl, chartsEl); break;
             case 'labels': await loadFdaLabels(params, resultsEl, chartsEl); break;
             case 'ndc': await loadFdaNdc(params, resultsEl, chartsEl); break;
+            case 'shortages': await loadFdaShortages(params, resultsEl, chartsEl); break;
         }
     } catch (err) {
         console.error('FDA load error:', err);
@@ -944,6 +946,74 @@ async function loadFdaNdc(params, resultsEl, chartsEl) {
                         <td>${p.dosage_form || '-'}</td>
                         <td>${(p.route || []).join(', ') || '-'}</td>
                         <td>${p.product_type || '-'}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    renderFdaPagination(data.total, data.skip, data.limit);
+}
+
+async function loadFdaShortages(params, resultsEl, chartsEl) {
+    const [data, byStatus, byCategory] = await Promise.all([
+        api.getFdaShortages(params),
+        api.getFdaShortagesCount({ field: 'status.exact', limit: 5, search: params.search || undefined }),
+        api.getFdaShortagesCount({ field: 'therapeutic_category.exact', limit: 10, search: params.search || undefined }),
+    ]);
+
+    // Charts
+    chartsEl.innerHTML = `
+        <div class="chart-card"><div class="chart-header"><h3>Shortages by Status</h3></div><div class="chart-body"><canvas id="fda-chart-shortage-status"></canvas></div></div>
+        <div class="chart-card"><div class="chart-header"><h3>Shortages by Therapeutic Category</h3></div><div class="chart-body"><canvas id="fda-chart-shortage-category"></canvas></div></div>
+    `;
+
+    if (byStatus.results && byStatus.results.length) {
+        createDonutChart('fda-chart-shortage-status',
+            byStatus.results.map(r => r.term),
+            byStatus.results.map(r => r.count),
+            { colors: ['#ef4444', '#22c55e', '#f59e0b', '#6366f1', '#14b8a6'] }
+        );
+    }
+    if (byCategory.results && byCategory.results.length) {
+        createBarChart('fda-chart-shortage-category',
+            byCategory.results.map(r => r.term.length > 18 ? r.term.slice(0, 18) + '...' : r.term),
+            byCategory.results.map(r => r.count),
+            { horizontal: true, colors: ['#f97316'] }
+        );
+    }
+
+    // Table
+    resultsEl.innerHTML = `
+        <div class="section-header"><h3>Drug Shortages</h3><span class="hero-sub" style="font-size:12px;color:var(--text-muted)">${data.total.toLocaleString()} total results</span></div>
+        <div class="fda-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Generic Name</th>
+                        <th>Brand Name</th>
+                        <th>Status</th>
+                        <th>Category</th>
+                        <th>Dosage Form</th>
+                        <th>Company</th>
+                        <th>Reason</th>
+                        <th>Est. Resolution</th>
+                        <th>Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.shortages.map(s => `
+                    <tr>
+                        <td><strong>${s.generic_name || '-'}</strong></td>
+                        <td>${s.brand_name || '-'}</td>
+                        <td>${s.status === 'Currently in Shortage'
+                            ? '<span class="fda-badge fda-badge-serious">In Shortage</span>'
+                            : '<span class="fda-badge fda-badge-ok">Resolved</span>'}</td>
+                        <td>${s.therapeutic_category || '-'}</td>
+                        <td>${s.dosage_form || '-'}</td>
+                        <td>${s.company_name || '-'}</td>
+                        <td class="fda-reason">${s.reason_for_shortage || '-'}</td>
+                        <td>${s.estimated_resolution || '-'}</td>
+                        <td>${s.updated_date || '-'}</td>
                     </tr>`).join('')}
                 </tbody>
             </table>
