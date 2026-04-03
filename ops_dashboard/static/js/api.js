@@ -108,6 +108,18 @@ class ApiClient {
     getSupplierRiskTrend(params) { return this.get('/api/risk/supplier-trend', params); }
     getRiskHeatmap(params) { return this.get('/api/risk/risk-heatmap', params); }
 
+    // ── FDA ─────────────────────────────────────────────────────
+    getFdaAdverseEvents(params) { return this.get('/api/fda/adverse-events', params); }
+    getFdaTopReactions(params) { return this.get('/api/fda/adverse-events/top-reactions', params); }
+    getFdaTopDrugs(params) { return this.get('/api/fda/adverse-events/top-drugs', params); }
+    getFdaSeriousness() { return this.get('/api/fda/adverse-events/seriousness'); }
+    getFdaTimeline(params) { return this.get('/api/fda/adverse-events/timeline', params); }
+    getFdaRecalls(params) { return this.get('/api/fda/recalls', params); }
+    getFdaRecallsByClass() { return this.get('/api/fda/recalls/by-classification'); }
+    getFdaRecallsByStatus() { return this.get('/api/fda/recalls/by-status'); }
+    getFdaTopRecallReasons(params) { return this.get('/api/fda/recalls/top-reasons', params); }
+    getFdaDrugLabel(params) { return this.get('/api/fda/drug-label', params); }
+
     // ── Filters ──────────────────────────────────────────────────
     getFilterOptions() { return this.get('/api/filters/options'); }
 

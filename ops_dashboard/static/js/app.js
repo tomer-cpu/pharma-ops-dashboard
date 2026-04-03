@@ -61,6 +61,7 @@ async function loadTab(tabName) {
             case 'cost': await renderCostTab(params); break;
             case 'efficiency': await renderEfficiencyTab(params); break;
             case 'risk': await renderRiskTab(params); break;
+            case 'fda': await renderFdaTab(); break;
             case 'setup': await renderSetupTab(); break;
         }
     } catch (err) {
@@ -688,6 +689,160 @@ async function loadTargetsForm() {
     }
 }
 
+
+// ── FDA TAB ─────────────────────────────────────────────────────
+
+async function renderFdaTab() {
+    const content = document.getElementById('tab-content');
+    content.innerHTML = `
+        <div class="fda-search-bar">
+            <input type="text" id="fda-drug-search" class="fda-search-input" placeholder="Search by drug name (e.g. aspirin, ibuprofen)...">
+            <button class="btn-primary fda-search-btn" id="fda-search-btn">Search FDA</button>
+        </div>
+        <div class="fda-summary-cards" id="fda-summary"></div>
+        <div class="charts-grid">
+            <div class="chart-card"><div class="chart-header"><h3>Top Adverse Reactions</h3></div><div class="chart-body"><canvas id="chart-fda-reactions"></canvas></div></div>
+            <div class="chart-card"><div class="chart-header"><h3>Top Drugs in Reports</h3></div><div class="chart-body"><canvas id="chart-fda-drugs"></canvas></div></div>
+            <div class="chart-card"><div class="chart-header"><h3>Recalls by Classification</h3></div><div class="chart-body"><canvas id="chart-fda-recall-class"></canvas></div></div>
+            <div class="chart-card"><div class="chart-header"><h3>Recall Status</h3></div><div class="chart-body"><canvas id="chart-fda-recall-status"></canvas></div></div>
+        </div>
+        <div class="fda-tables-grid">
+            <div class="chart-card span-2">
+                <div class="chart-header"><h3>Recent Adverse Events</h3></div>
+                <div class="chart-body" id="fda-events-table" style="overflow-x:auto;"></div>
+            </div>
+            <div class="chart-card span-2">
+                <div class="chart-header"><h3>Recent Drug Recalls</h3></div>
+                <div class="chart-body" id="fda-recalls-table" style="overflow-x:auto;"></div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('fda-search-btn').addEventListener('click', () => {
+        const q = document.getElementById('fda-drug-search').value.trim();
+        loadFdaData(q || null);
+    });
+    document.getElementById('fda-drug-search').addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            const q = e.target.value.trim();
+            loadFdaData(q || null);
+        }
+    });
+
+    await loadFdaData(null);
+}
+
+async function loadFdaData(drugSearch) {
+    const searchParam = drugSearch ? { search: `patient.drug.medicinalproduct:"${drugSearch}"` } : {};
+    const recallSearch = drugSearch ? { search: `product_description:"${drugSearch}"` } : {};
+
+    try {
+        const [topReactions, topDrugs, seriousness, recallClass, recallStatus, events, recalls] = await Promise.all([
+            api.getFdaTopReactions({ limit: 10 }).catch(() => []),
+            api.getFdaTopDrugs({ limit: 10 }).catch(() => []),
+            api.getFdaSeriousness().catch(() => []),
+            api.getFdaRecallsByClass().catch(() => []),
+            api.getFdaRecallsByStatus().catch(() => []),
+            api.getFdaAdverseEvents({ ...searchParam, limit: 10 }).catch(() => ({ results: [], meta: {} })),
+            api.getFdaRecalls({ ...recallSearch, limit: 10 }).catch(() => ({ results: [], meta: {} })),
+        ]);
+
+        // Summary cards
+        const totalEvents = events.meta?.results?.total || 0;
+        const totalRecalls = recalls.meta?.results?.total || 0;
+        const seriousCount = seriousness.find(s => s.term === 1);
+        const seriousPct = seriousCount ? Math.round((seriousCount.count / (seriousness.reduce((a, b) => a + b.count, 0) || 1)) * 100) : 0;
+
+        const summaryEl = document.getElementById('fda-summary');
+        summaryEl.innerHTML = `
+            <div class="fda-stat-card">
+                <div class="fda-stat-value">${totalEvents.toLocaleString()}</div>
+                <div class="fda-stat-label">Total Adverse Events</div>
+            </div>
+            <div class="fda-stat-card">
+                <div class="fda-stat-value">${seriousPct}%</div>
+                <div class="fda-stat-label">Serious Events</div>
+            </div>
+            <div class="fda-stat-card">
+                <div class="fda-stat-value">${totalRecalls.toLocaleString()}</div>
+                <div class="fda-stat-label">Total Drug Recalls</div>
+            </div>
+            <div class="fda-stat-card">
+                <div class="fda-stat-value">${(recallClass.find(r => r.term === 'Class I') || {}).count || 0}</div>
+                <div class="fda-stat-label">Class I Recalls</div>
+            </div>
+        `;
+
+        // Charts
+        if (topReactions.length) {
+            createBarChart('chart-fda-reactions',
+                topReactions.map(r => r.term.length > 20 ? r.term.slice(0, 18) + '...' : r.term),
+                topReactions.map(r => r.count),
+                { colors: ['#ef4444', '#f87171', '#fb923c', '#fbbf24', '#a3e635', '#34d399', '#22d3ee', '#818cf8', '#c084fc', '#f472b6'] }
+            );
+        }
+
+        if (topDrugs.length) {
+            createBarChart('chart-fda-drugs',
+                topDrugs.map(r => r.term.length > 20 ? r.term.slice(0, 18) + '...' : r.term),
+                topDrugs.map(r => r.count),
+                { colors: ['#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#84cc16'] }
+            );
+        }
+
+        if (recallClass.length) {
+            createDonutChart('chart-fda-recall-class',
+                recallClass.map(r => r.term),
+                recallClass.map(r => r.count),
+                { colors: ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'] }
+            );
+        }
+
+        if (recallStatus.length) {
+            createDonutChart('chart-fda-recall-status',
+                recallStatus.map(r => r.term),
+                recallStatus.map(r => r.count),
+                { colors: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#a855f7'] }
+            );
+        }
+
+        // Events table
+        const eventsEl = document.getElementById('fda-events-table');
+        if (events.results && events.results.length) {
+            eventsEl.innerHTML = `<table class="fda-table">
+                <thead><tr><th>Date</th><th>Drug(s)</th><th>Reaction(s)</th><th>Serious</th><th>Country</th></tr></thead>
+                <tbody>${events.results.map(e => {
+                    const drugs = (e.patient?.drug || []).map(d => d.medicinalproduct).filter(Boolean).join(', ') || 'N/A';
+                    const reactions = (e.patient?.reaction || []).map(r => r.reactionmeddrapt).filter(Boolean).join(', ') || 'N/A';
+                    const date = e.receivedate ? e.receivedate.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') : 'N/A';
+                    const serious = e.serious === '1' ? '<span class="fda-badge serious">Yes</span>' : '<span class="fda-badge">No</span>';
+                    return `<tr><td>${date}</td><td>${drugs}</td><td>${reactions}</td><td>${serious}</td><td>${e.occurcountry || 'N/A'}</td></tr>`;
+                }).join('')}</tbody></table>`;
+        } else {
+            eventsEl.innerHTML = '<p style="padding:16px;color:var(--text-muted)">No adverse events found.</p>';
+        }
+
+        // Recalls table
+        const recallsEl = document.getElementById('fda-recalls-table');
+        if (recalls.results && recalls.results.length) {
+            recallsEl.innerHTML = `<table class="fda-table">
+                <thead><tr><th>Date</th><th>Product</th><th>Reason</th><th>Class</th><th>Status</th></tr></thead>
+                <tbody>${recalls.results.map(r => {
+                    const date = r.report_date ? r.report_date.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') : 'N/A';
+                    const product = (r.product_description || 'N/A').slice(0, 80);
+                    const reason = (r.reason_for_recall || 'N/A').slice(0, 80);
+                    const cls = r.classification || 'N/A';
+                    const clsBadge = cls === 'Class I' ? 'critical' : cls === 'Class II' ? 'warning' : 'info';
+                    return `<tr><td>${date}</td><td>${product}</td><td>${reason}</td><td><span class="fda-badge ${clsBadge}">${cls}</span></td><td>${r.status || 'N/A'}</td></tr>`;
+                }).join('')}</tbody></table>`;
+        } else {
+            recallsEl.innerHTML = '<p style="padding:16px;color:var(--text-muted)">No recalls found.</p>';
+        }
+    } catch (err) {
+        console.error('FDA data load error:', err);
+        document.getElementById('fda-summary').innerHTML = '<p style="color:var(--accent-red);padding:16px;">Unable to load FDA data. The openFDA API may be temporarily unavailable.</p>';
+    }
+}
 
 // ── SETUP TAB ────────────────────────────────────────────────────
 
