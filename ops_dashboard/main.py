@@ -9,7 +9,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from ops_dashboard.config import STATIC_DIR
 from ops_dashboard.data.database import init_db
 from ops_dashboard.data.mock_generator import seed_mock_data
-from ops_dashboard.api import quality, service, cost, efficiency, risk, summary, filters, settings
+from ops_dashboard.api import quality, service, cost, efficiency, risk, summary, filters, settings, fda
+from ops_dashboard.services.fda_client import close_client as fda_close
 
 
 # -- Embedding middleware -------------------------------------------------
@@ -43,6 +44,7 @@ async def lifespan(app: FastAPI):
     else:
         print("  Database already contains data")
     yield
+    await fda_close()
 
 
 app = FastAPI(
@@ -70,6 +72,7 @@ app.include_router(risk.router, prefix="/api/risk", tags=["Risk"])
 app.include_router(summary.router, prefix="/api/summary", tags=["Summary"])
 app.include_router(filters.router, prefix="/api/filters", tags=["Filters"])
 app.include_router(settings.router, prefix="/api/settings", tags=["Settings"])
+app.include_router(fda.router, prefix="/api/fda", tags=["FDA (openFDA)"])
 
 # Serve frontend static files
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

@@ -108,6 +108,16 @@ class ApiClient {
     getSupplierRiskTrend(params) { return this.get('/api/risk/supplier-trend', params); }
     getRiskHeatmap(params) { return this.get('/api/risk/risk-heatmap', params); }
 
+    // ── FDA (openFDA) ──────────────────────────────────────────────
+    getFdaAdverseEvents(params) { return this.get('/api/fda/adverse-events', params); }
+    getFdaAdverseEventsCount(params) { return this.get('/api/fda/adverse-events/count', params); }
+    getFdaRecalls(params) { return this.get('/api/fda/recalls', params); }
+    getFdaRecallsCount(params) { return this.get('/api/fda/recalls/count', params); }
+    getFdaLabels(params) { return this.get('/api/fda/labels', params); }
+    getFdaNdc(params) { return this.get('/api/fda/ndc', params); }
+    getFdaSearch(params) { return this.get('/api/fda/search', params); }
+    getFdaCount(params) { return this.get('/api/fda/count', params); }
+
     // ── Filters ──────────────────────────────────────────────────
     getFilterOptions() { return this.get('/api/filters/options'); }
 

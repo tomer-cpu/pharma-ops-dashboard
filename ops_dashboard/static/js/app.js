@@ -61,6 +61,7 @@ async function loadTab(tabName) {
             case 'cost': await renderCostTab(params); break;
             case 'efficiency': await renderEfficiencyTab(params); break;
             case 'risk': await renderRiskTab(params); break;
+            case 'fda': await renderFdaTab(); break;
             case 'setup': await renderSetupTab(); break;
         }
     } catch (err) {
@@ -686,6 +687,304 @@ async function loadTargetsForm() {
         const display = document.getElementById('total-weight-display');
         if (display) display.textContent = sum;
     }
+}
+
+
+// ── FDA DATA TAB ────────────────────────────────────────────────
+
+let fdaState = { section: 'adverse-events', search: '', limit: 10, skip: 0 };
+
+async function renderFdaTab() {
+    const content = document.getElementById('tab-content');
+    content.innerHTML = `
+        <div class="fda-dashboard">
+            <div class="section-header" style="margin-bottom:16px">
+                <h2>openFDA Data Explorer</h2>
+                <span class="hero-sub" style="font-size:12px;color:var(--text-muted)">Live data from open.fda.gov</span>
+            </div>
+
+            <!-- FDA Section Selector -->
+            <div class="fda-controls">
+                <div class="fda-sections">
+                    <button class="fda-section-btn active" data-fda="adverse-events">Adverse Events</button>
+                    <button class="fda-section-btn" data-fda="recalls">Recalls</button>
+                    <button class="fda-section-btn" data-fda="labels">Drug Labels</button>
+                    <button class="fda-section-btn" data-fda="ndc">NDC Directory</button>
+                </div>
+                <div class="fda-search-bar">
+                    <input type="text" id="fda-search-input" placeholder="Search query (e.g. patient.drug.medicinalproduct:aspirin)" value="${fdaState.search}">
+                    <button class="btn-primary" id="fda-search-btn">Search</button>
+                </div>
+            </div>
+
+            <!-- FDA Count Charts -->
+            <div class="charts-grid" id="fda-charts" style="margin-top:16px"></div>
+
+            <!-- FDA Results -->
+            <div id="fda-results" style="margin-top:16px">
+                <div style="text-align:center; padding:40px; color:var(--text-muted);">Loading FDA data...</div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="fda-pagination" id="fda-pagination"></div>
+        </div>
+    `;
+
+    // Section button handlers
+    document.querySelectorAll('.fda-section-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.fda-section-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            fdaState.section = btn.dataset.fda;
+            fdaState.skip = 0;
+            loadFdaData();
+        });
+    });
+
+    // Search handler
+    document.getElementById('fda-search-btn').addEventListener('click', () => {
+        fdaState.search = document.getElementById('fda-search-input').value.trim();
+        fdaState.skip = 0;
+        loadFdaData();
+    });
+    document.getElementById('fda-search-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            fdaState.search = e.target.value.trim();
+            fdaState.skip = 0;
+            loadFdaData();
+        }
+    });
+
+    await loadFdaData();
+}
+
+async function loadFdaData() {
+    const resultsEl = document.getElementById('fda-results');
+    const chartsEl = document.getElementById('fda-charts');
+    const paginationEl = document.getElementById('fda-pagination');
+    resultsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">Loading...</div>';
+    chartsEl.innerHTML = '';
+    paginationEl.innerHTML = '';
+
+    const params = { limit: fdaState.limit, skip: fdaState.skip };
+    if (fdaState.search) params.search = fdaState.search;
+
+    try {
+        switch (fdaState.section) {
+            case 'adverse-events': await loadFdaAdverseEvents(params, resultsEl, chartsEl); break;
+            case 'recalls': await loadFdaRecalls(params, resultsEl, chartsEl); break;
+            case 'labels': await loadFdaLabels(params, resultsEl, chartsEl); break;
+            case 'ndc': await loadFdaNdc(params, resultsEl, chartsEl); break;
+        }
+    } catch (err) {
+        console.error('FDA load error:', err);
+        resultsEl.innerHTML = `<div class="error-message">Error loading FDA data: ${err.message}</div>`;
+    }
+}
+
+async function loadFdaAdverseEvents(params, resultsEl, chartsEl) {
+    const [data, topReactions, topDrugs] = await Promise.all([
+        api.getFdaAdverseEvents(params),
+        api.getFdaAdverseEventsCount({ field: 'patient.reaction.reactionmeddrapt.exact', limit: 10, search: params.search || undefined }),
+        api.getFdaAdverseEventsCount({ field: 'patient.drug.medicinalproduct.exact', limit: 10, search: params.search || undefined }),
+    ]);
+
+    // Charts
+    chartsEl.innerHTML = `
+        <div class="chart-card"><div class="chart-header"><h3>Top Adverse Reactions</h3></div><div class="chart-body"><canvas id="fda-chart-reactions"></canvas></div></div>
+        <div class="chart-card"><div class="chart-header"><h3>Top Drugs in Reports</h3></div><div class="chart-body"><canvas id="fda-chart-drugs"></canvas></div></div>
+    `;
+
+    if (topReactions.results && topReactions.results.length) {
+        createBarChart('fda-chart-reactions',
+            topReactions.results.map(r => r.term.length > 20 ? r.term.slice(0, 20) + '...' : r.term),
+            topReactions.results.map(r => r.count),
+            { horizontal: true, colors: ['#ef4444'] }
+        );
+    }
+    if (topDrugs.results && topDrugs.results.length) {
+        createBarChart('fda-chart-drugs',
+            topDrugs.results.map(r => r.term.length > 20 ? r.term.slice(0, 20) + '...' : r.term),
+            topDrugs.results.map(r => r.count),
+            { horizontal: true, colors: ['#6366f1'] }
+        );
+    }
+
+    // Table
+    resultsEl.innerHTML = `
+        <div class="section-header"><h3>Adverse Event Reports</h3><span class="hero-sub" style="font-size:12px;color:var(--text-muted)">${data.total.toLocaleString()} total results</span></div>
+        <div class="fda-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Report ID</th>
+                        <th>Date</th>
+                        <th>Serious</th>
+                        <th>Drugs</th>
+                        <th>Reactions</th>
+                        <th>Country</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.events.map(e => `
+                    <tr>
+                        <td><code>${e.report_id || '-'}</code></td>
+                        <td>${_fdaDate(e.receive_date)}</td>
+                        <td>${e.serious ? '<span class="fda-badge fda-badge-serious">Serious</span>' : '<span class="fda-badge fda-badge-ok">No</span>'}
+                            ${e.seriousness.length ? '<div class="fda-sub">' + e.seriousness.join(', ') + '</div>' : ''}
+                        </td>
+                        <td>${e.drugs.slice(0, 3).join(', ') || '-'}${e.drugs.length > 3 ? ' (+' + (e.drugs.length - 3) + ')' : ''}</td>
+                        <td>${e.reactions.slice(0, 3).join(', ') || '-'}${e.reactions.length > 3 ? ' (+' + (e.reactions.length - 3) + ')' : ''}</td>
+                        <td>${e.country || '-'}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    renderFdaPagination(data.total, data.skip, data.limit);
+}
+
+async function loadFdaRecalls(params, resultsEl, chartsEl) {
+    const [data, byClass] = await Promise.all([
+        api.getFdaRecalls(params),
+        api.getFdaRecallsCount({ field: 'classification.exact', limit: 5, search: params.search || undefined }),
+    ]);
+
+    chartsEl.innerHTML = `
+        <div class="chart-card"><div class="chart-header"><h3>Recalls by Classification</h3></div><div class="chart-body"><canvas id="fda-chart-recall-class"></canvas></div></div>
+    `;
+    if (byClass.results && byClass.results.length) {
+        const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#6366f1'];
+        createDonutChart('fda-chart-recall-class',
+            byClass.results.map(r => r.term),
+            byClass.results.map(r => r.count),
+            { colors: colors.slice(0, byClass.results.length) }
+        );
+    }
+
+    resultsEl.innerHTML = `
+        <div class="section-header"><h3>Drug Recalls / Enforcement</h3><span class="hero-sub" style="font-size:12px;color:var(--text-muted)">${data.total.toLocaleString()} total results</span></div>
+        <div class="fda-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Recall #</th>
+                        <th>Date</th>
+                        <th>Class</th>
+                        <th>Status</th>
+                        <th>Firm</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.recalls.map(r => `
+                    <tr>
+                        <td><code>${r.recall_number || '-'}</code></td>
+                        <td>${_fdaDate(r.report_date)}</td>
+                        <td><span class="fda-badge fda-badge-class${_recallClassNum(r.classification)}">${r.classification || '-'}</span></td>
+                        <td>${r.status || '-'}</td>
+                        <td>${r.recalling_firm || '-'}</td>
+                        <td class="fda-reason">${(r.reason_for_recall || '-').slice(0, 120)}${(r.reason_for_recall || '').length > 120 ? '...' : ''}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    renderFdaPagination(data.total, data.skip, data.limit);
+}
+
+async function loadFdaLabels(params, resultsEl, chartsEl) {
+    const data = await api.getFdaLabels(params);
+
+    resultsEl.innerHTML = `
+        <div class="section-header"><h3>Drug Labels (SPL)</h3><span class="hero-sub" style="font-size:12px;color:var(--text-muted)">${data.total.toLocaleString()} total results</span></div>
+        <div class="fda-cards-grid">
+            ${data.labels.map(l => `
+            <div class="fda-label-card">
+                <div class="fda-label-header">
+                    <strong>${l.brand_name || l.generic_name || 'Unknown'}</strong>
+                    ${l.generic_name && l.brand_name ? '<span class="fda-sub">' + l.generic_name + '</span>' : ''}
+                </div>
+                ${l.manufacturer_name ? '<div class="fda-sub">Manufacturer: ' + l.manufacturer_name + '</div>' : ''}
+                ${l.route ? '<div class="fda-sub">Route: ' + l.route.join(', ') + '</div>' : ''}
+                ${l.product_type ? '<div class="fda-sub">Type: ' + l.product_type + '</div>' : ''}
+                ${l.indications_and_usage ? '<div class="fda-label-section"><strong>Indications:</strong> ' + l.indications_and_usage[0].slice(0, 200) + (l.indications_and_usage[0].length > 200 ? '...' : '') + '</div>' : ''}
+                ${l.warnings ? '<div class="fda-label-section fda-warning-text"><strong>Warnings:</strong> ' + l.warnings[0].slice(0, 200) + (l.warnings[0].length > 200 ? '...' : '') + '</div>' : ''}
+            </div>`).join('')}
+        </div>
+    `;
+    renderFdaPagination(data.total, data.skip, data.limit);
+}
+
+async function loadFdaNdc(params, resultsEl, chartsEl) {
+    const data = await api.getFdaNdc(params);
+
+    resultsEl.innerHTML = `
+        <div class="section-header"><h3>NDC Directory</h3><span class="hero-sub" style="font-size:12px;color:var(--text-muted)">${data.total.toLocaleString()} total results</span></div>
+        <div class="fda-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>NDC</th>
+                        <th>Brand Name</th>
+                        <th>Generic Name</th>
+                        <th>Labeler</th>
+                        <th>Dosage Form</th>
+                        <th>Route</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.products.map(p => `
+                    <tr>
+                        <td><code>${p.product_ndc || '-'}</code></td>
+                        <td>${p.brand_name || '-'}</td>
+                        <td>${p.generic_name || '-'}</td>
+                        <td>${p.labeler_name || '-'}</td>
+                        <td>${p.dosage_form || '-'}</td>
+                        <td>${(p.route || []).join(', ') || '-'}</td>
+                        <td>${p.product_type || '-'}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    renderFdaPagination(data.total, data.skip, data.limit);
+}
+
+function renderFdaPagination(total, skip, limit) {
+    const paginationEl = document.getElementById('fda-pagination');
+    const page = Math.floor(skip / limit) + 1;
+    const totalPages = Math.ceil(Math.min(total, 5000) / limit); // FDA limits skip to ~5000
+
+    if (totalPages <= 1) { paginationEl.innerHTML = ''; return; }
+
+    paginationEl.innerHTML = `
+        <button class="btn-secondary fda-page-btn" ${page <= 1 ? 'disabled' : ''} data-page="prev">&laquo; Prev</button>
+        <span class="fda-page-info">Page ${page} of ${totalPages.toLocaleString()} (${total.toLocaleString()} results)</span>
+        <button class="btn-secondary fda-page-btn" ${page >= totalPages ? 'disabled' : ''} data-page="next">Next &raquo;</button>
+    `;
+
+    paginationEl.querySelectorAll('.fda-page-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.dataset.page === 'prev') fdaState.skip = Math.max(0, fdaState.skip - fdaState.limit);
+            else fdaState.skip += fdaState.limit;
+            loadFdaData();
+        });
+    });
+}
+
+function _fdaDate(raw) {
+    if (!raw || raw.length < 8) return '-';
+    return raw.slice(0, 4) + '-' + raw.slice(4, 6) + '-' + raw.slice(6, 8);
+}
+
+function _recallClassNum(cls) {
+    if (!cls) return '3';
+    if (cls.includes('I') && !cls.includes('II')) return '1';
+    if (cls.includes('III')) return '3';
+    if (cls.includes('II')) return '2';
+    return '3';
 }
 
 
