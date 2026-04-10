@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ניטור מחירי ליימן שליסל — דשבורד יומי</title>
+  <link rel="stylesheet" href="/static/retail_price/styles.css" />
+</head>
+<body>
+  <header class="rpm-header">
+    <div class="rpm-title">
+      <h1>ניטור מחירי ליימן שליסל</h1>
+      <p id="rpmSubtitle">תמונת מצב יומית ברשתות הקמעונאיות הגדולות בישראל</p>
+    </div>
+    <div class="rpm-meta">
+      <label>תאריך הצגה:
+        <input type="date" id="rpmDatePicker" />
+      </label>
+      <button id="rpmTodayBtn" class="rpm-btn secondary">חזרה לתאריך עדכני</button>
+    </div>
+  </header>
+
+  <nav class="rpm-tabs">
+    <button class="rpm-tab active" data-tab="exec">מסך הנהלה</button>
+    <button class="rpm-tab" data-tab="compare">השוואת מוצרים</button>
+    <button class="rpm-tab" data-tab="trends">מגמות</button>
+    <button class="rpm-tab" data-tab="anomalies">חריגות</button>
+    <button class="rpm-tab" data-tab="alerts">התראות</button>
+  </nav>
+
+  <main class="rpm-content">
+    <!-- ── Executive screen ──────────────────────────────────── -->
+    <section class="rpm-panel active" id="panel-exec">
+      <div class="rpm-brief">
+        <h2>תקציר בוקר</h2>
+        <ul id="rpmBrief" class="rpm-brief-list"></ul>
+      </div>
+
+      <div class="rpm-kpi-grid">
+        <div class="rpm-kpi"><span class="rpm-kpi-label">מוצרים שנאספו היום</span><span class="rpm-kpi-value" id="kpiProducts">—</span></div>
+        <div class="rpm-kpi"><span class="rpm-kpi-label">רשתות פעילות</span><span class="rpm-kpi-value" id="kpiRetailers">—</span></div>
+        <div class="rpm-kpi"><span class="rpm-kpi-label">מבצעים פעילים</span><span class="rpm-kpi-value" id="kpiPromos">—</span></div>
+        <div class="rpm-kpi"><span class="rpm-kpi-label">שינויי מחיר מהותיים</span><span class="rpm-kpi-value" id="kpiChanges">—</span></div>
+      </div>
+
+      <div class="rpm-exec-split">
+        <div class="rpm-card">
+          <h3>רשת זולה ויקרה בממוצע</h3>
+          <div id="rpmRetailerRanking" class="rpm-retailer-ranking"></div>
+        </div>
+        <div class="rpm-card">
+          <h3>פערי המחיר הגבוהים ביותר</h3>
+          <table class="rpm-table compact"><thead>
+            <tr><th>מוצר</th><th>ממוצע</th><th>מינ׳</th><th>מקס׳</th><th>פער %</th></tr>
+          </thead><tbody id="rpmTopSpread"></tbody></table>
+        </div>
+      </div>
+
+      <div class="rpm-exec-split">
+        <div class="rpm-card">
+          <h3>הירידות החדות ביותר (יממה)</h3>
+          <table class="rpm-table compact"><thead>
+            <tr><th>מוצר</th><th>ממוצע היום</th><th>שינוי</th></tr>
+          </thead><tbody id="rpmTopDrops"></tbody></table>
+        </div>
+        <div class="rpm-card">
+          <h3>העליות החדות ביותר (יממה)</h3>
+          <table class="rpm-table compact"><thead>
+            <tr><th>מוצר</th><th>ממוצע היום</th><th>שינוי</th></tr>
+          </thead><tbody id="rpmTopJumps"></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Comparison screen ─────────────────────────────────── -->
+    <section class="rpm-panel" id="panel-compare">
+      <div class="rpm-filters">
+        <input type="search" id="cmpSearch" placeholder="חיפוש לפי שם מוצר או ברקוד" />
+        <select id="cmpCategory"><option value="">כל הקטגוריות</option></select>
+      </div>
+      <div class="rpm-card">
+        <table class="rpm-table">
+          <thead>
+            <tr>
+              <th>מוצר</th>
+              <th>ברקוד</th>
+              <th>קטגוריה</th>
+              <th>מינ׳</th>
+              <th>ממוצע</th>
+              <th>מקס׳</th>
+              <th>פער %</th>
+              <th>רשתות</th>
+              <th>מבצע</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rpmCompareBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── Trend screen ──────────────────────────────────────── -->
+    <section class="rpm-panel" id="panel-trends">
+      <div class="rpm-filters">
+        <label>מוצר:
+          <select id="trendProduct"></select>
+        </label>
+        <label>חלון זמן:
+          <select id="trendDays">
+            <option value="7">7 ימים</option>
+            <option value="30" selected>30 ימים</option>
+            <option value="60">60 ימים</option>
+          </select>
+        </label>
+      </div>
+      <div class="rpm-card">
+        <div class="rpm-trend-header">
+          <div><span class="muted">שינוי מול אתמול:</span> <strong id="trendD1">—</strong></div>
+          <div><span class="muted">שינוי מול 7 ימים:</span> <strong id="trendD7">—</strong></div>
+          <div><span class="muted">שינוי מול 30 ימים:</span> <strong id="trendD30">—</strong></div>
+          <div><span class="muted">מגמה:</span> <strong id="trendLabel">—</strong></div>
+        </div>
+        <svg id="trendChart" viewBox="0 0 800 320" preserveAspectRatio="none"></svg>
+        <div id="trendLegend" class="rpm-legend"></div>
+      </div>
+    </section>
+
+    <!-- ── Anomalies screen ──────────────────────────────────── -->
+    <section class="rpm-panel" id="panel-anomalies">
+      <div class="rpm-anomaly-grid">
+        <div class="rpm-card">
+          <h3>שונות גבוהה בין רשתות</h3>
+          <table class="rpm-table compact"><thead>
+            <tr><th>מוצר</th><th>מקס-מינ</th><th>מקדם שונות</th></tr>
+          </thead><tbody id="anomVariance"></tbody></table>
+        </div>
+        <div class="rpm-card">
+          <h3>עליות חדות</h3>
+          <table class="rpm-table compact"><thead>
+            <tr><th>מוצר</th><th>ממוצע</th><th>שינוי</th></tr>
+          </thead><tbody id="anomJumps"></tbody></table>
+        </div>
+        <div class="rpm-card">
+          <h3>ירידות חדות</h3>
+          <table class="rpm-table compact"><thead>
+            <tr><th>מוצר</th><th>ממוצע</th><th>שינוי</th></tr>
+          </thead><tbody id="anomDrops"></tbody></table>
+        </div>
+        <div class="rpm-card">
+          <h3>כיסוי חסר</h3>
+          <table class="rpm-table compact"><thead>
+            <tr><th>מוצר</th><th>רשתות שכיסו</th><th>חסרות</th></tr>
+          </thead><tbody id="anomIncomplete"></tbody></table>
+        </div>
+        <div class="rpm-card wide">
+          <h3>התאמות מוצר לבדיקה</h3>
+          <table class="rpm-table compact"><thead>
+            <tr><th>שם במקור</th><th>שם קנוני</th><th>רשת</th><th>ציון התאמה</th></tr>
+          </thead><tbody id="anomSuspicious"></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Alerts screen ─────────────────────────────────────── -->
+    <section class="rpm-panel" id="panel-alerts">
+      <div class="rpm-filters">
+        <select id="alertType">
+          <option value="">כל סוגי ההתראות</option>
+          <option value="price_jump">עליית מחיר</option>
+          <option value="price_drop">ירידת מחיר</option>
+          <option value="promo_start">מבצע חדש</option>
+          <option value="promo_end">סיום מבצע</option>
+          <option value="missing_product">מוצר נעלם</option>
+          <option value="new_product">מוצר חדש</option>
+          <option value="high_volatility">שונות גבוהה</option>
+          <option value="cheapest">זול במיוחד</option>
+          <option value="most_expensive">יקר במיוחד</option>
+          <option value="collection_failure">כשל איסוף</option>
+        </select>
+      </div>
+      <div class="rpm-card">
+        <ul id="rpmAlertsList" class="rpm-alerts-list"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rpm-footer">
+    <span>מקור: תצפיות פומביות באתרי הרשתות · </span>
+    <span id="rpmLastCollection"></span>
+  </footer>
+
+  <script src="/static/retail_price/app.js"></script>
+</body>
+</html>
