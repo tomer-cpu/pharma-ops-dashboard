@@ -1,10 +1,12 @@
 """FastAPI router that exposes the retail price monitor to the dashboard."""
 
+from datetime import date as _date
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
 from ops_dashboard.retail_price_monitor import analytics
+from ops_dashboard.retail_price_monitor.collectors import run_collectors
 from ops_dashboard.retail_price_monitor.config import ALERT_THRESHOLDS, BRAND_NAME
 
 router = APIRouter()
@@ -80,3 +82,21 @@ def rebuild_alerts(date: Optional[str] = Query(None)):
     """Recompute alerts for a given day (defaults to the latest snapshot)."""
 
     return analytics.generate_alerts_for_date(date)
+
+
+@router.post("/collect")
+def trigger_collection(target_date: Optional[str] = Query(None, description="YYYY-MM-DD")):
+    """Run every configured collector and persist the resulting observations.
+
+    Hits the chain-specific transparency-law feeds (Shufersal's public index,
+    the PublishedPrices DataTables backend, …), filters for Leiman Schlissel
+    SKUs, and writes one ``rpm_collection_log`` entry per retailer so the
+    dashboard can surface per-source success/failure.
+
+    The request is synchronous on purpose — production deployments should
+    schedule it via Render's cron service (or an equivalent) and wait for the
+    response.
+    """
+
+    td = _date.fromisoformat(target_date) if target_date else None
+    return run_collectors(target_date=td)

@@ -473,6 +473,44 @@ $("#rpmTodayBtn").addEventListener("click", async () => {
   if (active) onTabChanged(active.dataset.tab);
 });
 
+$("#rpmCollectBtn").addEventListener("click", async () => {
+  const btn = $("#rpmCollectBtn");
+  btn.disabled = true;
+  btn.textContent = "רץ על האתרים…";
+  const statusCard = $("#rpmCollectStatus");
+  const body = $("#rpmCollectBody");
+  clear(body);
+  statusCard.style.display = "block";
+  $("#rpmCollectMeta").textContent = "מתחיל ריצה…";
+  try {
+    const res = await fetch(`${API_BASE}/collect`, { method: "POST" });
+    const data = await res.json();
+    const statusLabels = { ok: "הצלחה", partial: "חלקי", failed: "נכשל", skipped: "דולג" };
+    const dot = { ok: "🟢", partial: "🟡", failed: "🔴", skipped: "⚪" };
+    $("#rpmCollectMeta").textContent =
+      `הרצה ליום ${data.date} · ${data.observations_written} תצפיות נכתבו · ` +
+      `${data.products_created || 0} מוצרים חדשים זוהו`;
+    data.collectors.forEach((c) => {
+      body.appendChild(createRow([
+        c.retailer_code,
+        `${dot[c.status] || "●"} ${statusLabels[c.status] || c.status}`,
+        c.observations,
+        c.error_message || (c.meta && c.meta.price_file) || "",
+      ]));
+    });
+    // Refresh dashboard data for the new day.
+    state.comparison = null;
+    await loadExecutive();
+    const active = document.querySelector(".rpm-tab.active");
+    if (active) onTabChanged(active.dataset.tab);
+  } catch (err) {
+    $("#rpmCollectMeta").textContent = "שגיאה בהפעלת ה-collectors: " + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "רוץ על האתרים עכשיו";
+  }
+});
+
 // ── Bootstrap ───────────────────────────────────────────────────────
 
 loadExecutive();

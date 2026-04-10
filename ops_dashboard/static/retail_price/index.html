@@ -17,6 +17,9 @@
         <input type="date" id="rpmDatePicker" />
       </label>
       <button id="rpmTodayBtn" class="rpm-btn secondary">חזרה לתאריך עדכני</button>
+      <button id="rpmCollectBtn" class="rpm-btn" title="הרץ את ה-collectors על אתרי הרשתות">
+        רוץ על האתרים עכשיו
+      </button>
     </div>
   </header>
 
@@ -34,6 +37,14 @@
       <div class="rpm-brief">
         <h2>תקציר בוקר</h2>
         <ul id="rpmBrief" class="rpm-brief-list"></ul>
+      </div>
+
+      <div class="rpm-card" id="rpmCollectStatus" style="display:none;">
+        <h3>תוצאת הרצת איסוף</h3>
+        <div id="rpmCollectMeta" class="muted" style="margin-bottom:8px;"></div>
+        <table class="rpm-table compact"><thead>
+          <tr><th>רשת</th><th>סטטוס</th><th>תצפיות</th><th>הערה</th></tr>
+        </thead><tbody id="rpmCollectBody"></tbody></table>
       </div>
 
       <div class="rpm-kpi-grid">
