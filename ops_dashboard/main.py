@@ -9,7 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from ops_dashboard.config import STATIC_DIR
 from ops_dashboard.data.database import init_db
 from ops_dashboard.data.mock_generator import seed_mock_data
-from ops_dashboard.api import quality, service, cost, efficiency, risk, summary, filters, settings
+from ops_dashboard.api import quality, service, cost, efficiency, risk, summary, filters, settings, orchestration
 
 
 # -- Embedding middleware -------------------------------------------------
@@ -70,6 +70,7 @@ app.include_router(risk.router, prefix="/api/risk", tags=["Risk"])
 app.include_router(summary.router, prefix="/api/summary", tags=["Summary"])
 app.include_router(filters.router, prefix="/api/filters", tags=["Filters"])
 app.include_router(settings.router, prefix="/api/settings", tags=["Settings"])
+app.include_router(orchestration.router, prefix="/api/orchestration", tags=["Orchestration"])
 
 # Serve frontend static files
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -84,3 +85,9 @@ async def root():
 async def embed():
     """Embeddable version - cleaner layout without header/footer."""
     return FileResponse(os.path.join(STATIC_DIR, "embed.html"))
+
+
+@app.get("/orchestration")
+async def orchestration_tool():
+    """Interactive explainer for the AI Agent Orchestration Blueprint."""
+    return FileResponse(os.path.join(STATIC_DIR, "orchestration.html"))
