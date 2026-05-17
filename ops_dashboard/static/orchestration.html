@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agent Orchestration Blueprint</title>
+<link rel="stylesheet" href="/static/css/styles.css">
+<style>
+  .orch-wrap { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .orch-hero { text-align: center; padding: 32px 16px 24px; }
+  .orch-hero h1 {
+    font-size: 32px; font-weight: 700; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .orch-hero p { color: var(--text-secondary); margin-top: 8px; }
+
+  .orch-grid {
+    display: grid; gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+  .orch-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    position: relative;
+    transition: var(--transition);
+  }
+  .orch-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+  .orch-card .num {
+    position: absolute; top: 16px; right: 16px;
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px;
+    background: rgba(255,255,255,0.06); color: var(--text-secondary);
+  }
+  .orch-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .orch-card .sub { color: var(--text-secondary); font-size: 13px; margin-bottom: 12px; }
+  .orch-card .eq {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .orch-card ul { list-style: none; padding: 0; margin: 8px 0; }
+  .orch-card ul li {
+    font-size: 13px; color: var(--text-secondary);
+    padding: 4px 0 4px 16px; position: relative; line-height: 1.4;
+  }
+  .orch-card ul li::before {
+    content: ""; position: absolute; left: 0; top: 11px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor; opacity: 0.5;
+  }
+  .orch-card .note {
+    font-size: 12px; font-style: italic;
+    color: var(--text-muted); margin-top: 12px;
+    padding-top: 12px; border-top: 1px dashed var(--border-color);
+  }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip {
+    font-size: 11px; padding: 3px 8px; border-radius: 4px;
+    background: rgba(255,255,255,0.05); color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+  }
+
+  .section-title {
+    font-size: 20px; font-weight: 600;
+    margin: 32px 0 16px; padding-left: 12px;
+    border-left: 3px solid var(--accent-blue);
+  }
+
+  .loop {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 8px; flex-wrap: wrap;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 24px;
+  }
+  .loop-step {
+    flex: 1; min-width: 120px; text-align: center;
+    padding: 12px; border-radius: var(--radius-sm);
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+  }
+  .loop-step h4 { font-size: 14px; color: var(--accent-blue); margin-bottom: 4px; }
+  .loop-step p { font-size: 11px; color: var(--text-secondary); }
+  .loop-arrow {
+    color: var(--text-muted); font-size: 18px; font-weight: 300;
+    flex: 0 0 auto;
+  }
+  .loop-center {
+    text-align: center; margin-top: 16px;
+    font-size: 13px; color: var(--text-secondary);
+    padding: 8px;
+    background: rgba(168, 85, 247, 0.08);
+    border-radius: var(--radius-sm);
+  }
+
+  .mantra-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+  .mantra {
+    flex: 1; min-width: 200px;
+    padding: 14px; border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    border-left: 3px solid var(--accent-teal);
+    font-size: 13px;
+  }
+
+  table.compare {
+    width: 100%; border-collapse: collapse;
+    background: var(--bg-card);
+    border-radius: var(--radius-md); overflow: hidden;
+  }
+  table.compare th, table.compare td {
+    padding: 12px 16px; text-align: left; font-size: 13px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  table.compare th {
+    background: rgba(255,255,255,0.03);
+    color: var(--text-secondary); font-weight: 600;
+    text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;
+  }
+  table.compare td:first-child { font-weight: 600; color: var(--text-primary); }
+  table.compare tr:last-child td { border-bottom: none; }
+  table.compare tr:hover { background: rgba(255,255,255,0.02); }
+
+  .example {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 24px;
+  }
+  .example-step {
+    display: flex; align-items: flex-start; gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px dashed var(--border-color);
+  }
+  .example-step:last-child { border-bottom: none; }
+  .example-step .n {
+    flex: 0 0 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    color: white; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .example-step .actor { font-weight: 600; color: var(--text-primary); }
+  .example-step .action { color: var(--accent-teal); margin: 0 6px; }
+  .example-step .detail { color: var(--text-secondary); font-size: 13px; }
+
+  .plugin-formula {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 24px; text-align: center;
+  }
+  .plugin-formula .formula {
+    font-size: 20px; font-weight: 600;
+    margin: 12px 0;
+    color: var(--text-primary);
+  }
+  .plugin-formula .formula span { color: var(--accent-amber); }
+  .plugin-formula .formula .eq { color: var(--accent-green); margin: 0 8px; }
+  .plugin-formula .formula .result { color: var(--accent-purple); }
+
+  .crumb {
+    color: var(--text-muted); font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .crumb a { color: var(--accent-blue); text-decoration: none; }
+  .crumb a:hover { text-decoration: underline; }
+
+  @media (max-width: 600px) {
+    .loop { flex-direction: column; }
+    .loop-arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="header-left">
+    <div class="logo">AI</div>
+    <div class="header-title">
+      <h1 id="hero-title">Loading...</h1>
+      <div class="subtitle" id="hero-sub"></div>
+    </div>
+  </div>
+  <div class="header-right">
+    <a href="/" style="color: var(--accent-blue); text-decoration: none; font-size: 13px;">&larr; Dashboard</a>
+  </div>
+</header>
+
+<main class="orch-wrap">
+  <div class="crumb">Tools &rsaquo; AI Agent Orchestration Blueprint</div>
+
+  <div class="orch-hero">
+    <h1 id="bp-title"></h1>
+    <p id="bp-tag"></p>
+  </div>
+
+  <h2 class="section-title">Four Layers</h2>
+  <div class="orch-grid" id="layers-grid"></div>
+
+  <h2 class="section-title">Core Agent Loop</h2>
+  <div id="loop-container"></div>
+
+  <h2 class="section-title">Filesystem / Knowledge Sources</h2>
+  <div class="orch-card" id="knowledge-card"></div>
+
+  <h2 class="section-title">Plugins - The Packaging Layer</h2>
+  <div class="plugin-formula" id="plugin-card"></div>
+
+  <h2 class="section-title">When to Use What</h2>
+  <table class="compare" id="compare-table">
+    <thead><tr><th>Component</th><th>Purpose</th><th>Analogy</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h2 class="section-title">Real-World Example</h2>
+  <div class="example" id="example-card"></div>
+</main>
+
+<footer class="footer">
+  AI Agent Orchestration Blueprint &middot;
+  <a href="/api/orchestration/blueprint" target="_blank">Raw JSON</a> &middot;
+  <a href="/docs" target="_blank">API Docs</a>
+</footer>
+
+<script>
+async function load() {
+  const res = await fetch('/api/orchestration/blueprint');
+  const bp = await res.json();
+  render(bp);
+}
+
+function render(bp) {
+  document.getElementById('hero-title').textContent = bp.title;
+  document.getElementById('hero-sub').textContent = bp.tagline;
+  document.getElementById('bp-title').textContent = bp.title;
+  document.getElementById('bp-tag').textContent = bp.tagline;
+
+  // Layers
+  const grid = document.getElementById('layers-grid');
+  grid.innerHTML = bp.layers.map(L => `
+    <div class="orch-card" style="border-top: 3px solid ${L.color}; color: ${L.color}">
+      <div class="num">${L.number}</div>
+      <h3 style="color: var(--text-primary)">${L.name}</h3>
+      <div class="sub">${L.subtitle}</div>
+      <span class="eq" style="background: ${L.color}22; color: ${L.color}">${L.equation}</span>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">${L.summary}</p>
+      <ul>${(L.bullets || []).map(b => `<li>${b}</li>`).join('')}</ul>
+      ${L.flow ? `<div class="chip-row">${L.flow.map(f => `<span class="chip">${f}</span>`).join('')}</div>` : ''}
+      ${L.examples ? renderExamples(L.examples) : ''}
+      ${L.types ? `<div class="chip-row">${L.types.map(t => `<span class="chip" title="${t.desc}">${t.name}</span>`).join('')}</div>` : ''}
+      ${L.note ? `<div class="note">${L.note}</div>` : ''}
+    </div>
+  `).join('');
+
+  // Core loop
+  const loop = bp.core_loop;
+  document.getElementById('loop-container').innerHTML = `
+    <div class="loop">
+      ${loop.steps.map((s, i) => `
+        <div class="loop-step">
+          <h4>${s.name}</h4>
+          <p>${s.desc}</p>
+        </div>
+        ${i < loop.steps.length - 1 ? '<div class="loop-arrow">&rarr;</div>' : ''}
+      `).join('')}
+    </div>
+    <div class="loop-center"><strong>${loop.center}</strong> &middot; ${loop.foundation}</div>
+  `;
+
+  // Knowledge
+  const k = bp.knowledge;
+  document.getElementById('knowledge-card').innerHTML = `
+    <h3 style="margin-bottom: 8px;">${k.anchor}</h3>
+    <div class="chip-row">${k.items.map(i => `<span class="chip">${i}</span>`).join('')}</div>
+    <div class="mantra-row">
+      ${k.mantras.map(m => `<div class="mantra">${m}</div>`).join('')}
+    </div>
+  `;
+
+  // Plugin
+  const p = bp.plugins;
+  document.getElementById('plugin-card').innerHTML = `
+    <h3>${p.title}</h3>
+    <div class="formula">
+      <span>Skills</span> + <span>MCP</span> + <span>Hooks</span> + <span>Subagents</span>
+      <span class="eq">=</span><span class="result">Plugin</span>
+    </div>
+    <p style="color: var(--text-secondary); font-size: 13px;">${p.subtitle}</p>
+  `;
+
+  // Comparison
+  document.querySelector('#compare-table tbody').innerHTML =
+    bp.comparison.map(r => `
+      <tr>
+        <td>${r.component}</td>
+        <td>${r.purpose}</td>
+        <td style="color: var(--text-secondary)">${r.analogy}</td>
+      </tr>
+    `).join('');
+
+  // Example
+  const ex = bp.example;
+  document.getElementById('example-card').innerHTML = `
+    <h3 style="margin-bottom: 16px;">${ex.title}</h3>
+    ${ex.steps.map(s => `
+      <div class="example-step">
+        <div class="n">${s.n}</div>
+        <div>
+          <span class="actor">${s.actor}</span>
+          <span class="action">${s.action}</span>
+          <span class="detail">&rarr; ${s.detail}</span>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+function renderExamples(examples) {
+  if (typeof examples[0] === 'string') {
+    return `<div class="chip-row">${examples.map(e => `<span class="chip">${e}</span>`).join('')}</div>`;
+  }
+  return `<div style="margin-top: 8px;">${
+    examples.map(e => `
+      <div style="font-size: 12px; color: var(--text-secondary); padding: 4px 0;">
+        <strong style="color: var(--text-primary)">${e.role}:</strong>
+        ${e.tools.map(t => `<span class="chip" style="margin-left: 4px;">${t}</span>`).join('')}
+      </div>
+    `).join('')
+  }</div>`;
+}
+
+load();
+</script>
+</body>
+</html>
