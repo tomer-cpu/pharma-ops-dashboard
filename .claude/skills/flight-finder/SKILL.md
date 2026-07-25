@@ -71,6 +71,18 @@ Worked examples, so the bands stay calibrated:
 Note the last row: every individual timestamp looks survivable, and it was the cheapest fare on the
 route by €50. The band comes entirely from `wake_back`.
 
+### One thing the bands don't catch
+
+A late-evening departure that lands after midnight — 23:30 out, 01:45 in — passes every gate. Both
+wake-ups are fine and you're not going home that night, so nothing in the arithmetic flags it. And
+it genuinely is fine: you trade an evening at home for a full first day at the destination, which is
+usually a good trade.
+
+But the user should still hear it before they book, because "you check in around 03:00" is the kind
+of detail that changes hotel plans. Mention the arrival time in a clause; don't downgrade the band
+over it. The gate is for costs the traveler pays in lost days — this one they pay in one late night,
+and they may well want it.
+
 Then apply this order, which is the skill's actual decision rule:
 
 1. **If any GREEN exists → the cheapest GREEN is the recommendation.** Not the cheapest overall.
