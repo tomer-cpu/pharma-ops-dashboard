@@ -59,6 +59,12 @@ Names observed in `AllResults[]`. The script maps these through `FIELD_ALIASES` 
 
 ### Gotchas
 
+- **Datacenter/cloud IPs get reCAPTCHA.** Verified 2026-08: loading nadlan.gov.il through a
+  cloud browser (Apify, datacenter proxy) returns only a reCAPTCHA challenge page, and
+  Complot sites time out from foreign datacenter IPs. Run this skill from a regular
+  (Israeli, residential/office) connection — the user's own machine. Do not try to defeat
+  the CAPTCHA or geo-block with proxy tricks; that's the site telling automation to slow
+  down, and the skill must respect it.
 - **Rate limiting is aggressive.** Keep `--sleep` at ≥1s. The script backs off exponentially
   on failure; don't defeat that by looping it.
 - **TLS**: the host rejects some modern default cipher lists. The script relaxes
