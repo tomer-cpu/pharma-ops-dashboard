@@ -28,12 +28,17 @@ the output in exactly one place, `resale_diagnostics`, and only as a data-qualit
 (see "The resale-only warning" below). Never present a resale figure as a headline.
 `--include-resale` exists but is off by default; use it only if the user explicitly asks.
 
-Two independent halves — never conflate them:
+Three things to establish, from three different places — never conflate them:
 
-| Half | Question | Source |
+| What | Question | Source |
 |------|----------|--------|
-| **Sold** (מכר) | How many distinct units in this building have registered transactions? | מידע נדל"ן — `nadlan.gov.il` REST API (script does this) |
+| **Sold** (מכר) | How many apartments has the developer sold to a first buyer? | מידע נדל"ן — `nadlan.gov.il` REST API (script does this) |
 | **Approved** (היתר) | How many housing units (יח"ד) does the building permit allow? | Municipal permit/GIS portal → מבא"ת → GovMap → ask the user |
+| **Developer** (קבלן/יזם) | Who is building it? | Permit holder (בעל ההיתר) → project site → רשם הקבלנים → ask the user |
+
+**The developer name is a required output field.** Every chat summary and every HTML report
+must name the contractor. If it could not be established, print
+*"קבלן/יזם: לא אותר"* together with what you tried — never silently drop the line.
 
 ---
 
@@ -101,6 +106,29 @@ Work down this ladder, stopping at the first source that gives a **number of hou
 **Always record which source the number came from and how confident it is.** The final
 report must state it — a plan-level number and a permit-level number are not the same claim.
 
+### Step 2b — Find the developer (שם הקבלן) — always
+
+Pass it to the script so it lands in the JSON and both outputs:
+`--developer "י.נ.ו.ב בניה ופיתוח בע\"מ" --developer-source "בעל ההיתר, GIS עירוני"`
+
+Ladder, best first:
+
+1. **בעל ההיתר / מבקש ההיתר** in the municipal permit record from Step 2 — this is the
+   legally accurate answer and usually comes free with the unit count. Prefer it.
+2. **The project's own site or a listing portal** (yad1/yad2, madlan, project microsite).
+   Fast and usually right, but it is *marketing* — the marketing brand and the permit holder
+   are often different legal entities (a single-project SPV). Label it as such.
+3. **רשם הקבלנים** (`gov.il` contractors registry) to confirm the legal entity and its
+   classification once you have a name.
+4. **Ask the user.**
+
+Two failure modes worth naming, because both silently corrupt the answer:
+- **Marketing name ≠ permit holder.** "מגדלי X" may be built by an SPV owned by a larger
+  group. When the two differ, report the permit holder and note the marketing name.
+- **More than one developer on the plot.** If the feed shows several project names the
+  script sets `developer.multiple_projects_in_feed` and warns. Split by house number
+  before naming a contractor — otherwise you attribute one builder's sales to another.
+
 ### Step 3 — Analyze
 
 The script already computes this; your job is to sanity-check it, not to redo it by hand.
@@ -124,6 +152,7 @@ The user wants **both**, in this order:
 
 ```
 🏗️ <כתובת מלאה> | גוש/חלקה <G/H>
+קבלן/יזם: <שם הקבלן> (<מקור>)
 
 | מדד | ערך |
 |---|---|

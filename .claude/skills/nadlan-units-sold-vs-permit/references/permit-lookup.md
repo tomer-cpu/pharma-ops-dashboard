@@ -78,6 +78,31 @@ in that case the comparison base is the added units only, and the report must sa
 
 ---
 
+---
+
+## Finding the developer name (שם הקבלן) — required in every report
+
+1. **בעל ההיתר / מבקש ההיתר** — the permit record from Rung 1 above. Legally accurate, and
+   you are already there getting the unit count. The attribute is usually
+   `בעל ההיתר`, `מבקש`, `שם המבקש` or `YAZAM` in a municipal ArcGIS layer:
+   `.../query?where=...&outFields=*&f=json` and read the field list.
+2. **The project's own site / listing portals** — yad1 (`yad2.co.il/yad1`), madlan,
+   the developer's site. Fast, but marketing: the brand name and the permit holder are
+   frequently different legal entities.
+3. **רשם הקבלנים** — `https://www.gov.il/he/service/contractors-registry` — confirms the
+   registered company, its number and classification once you have a candidate name.
+4. **Ask the user.**
+
+**Marketing brand vs. permit holder.** Israeli projects are commonly built by a
+single-purpose company owned by a larger group ("X בע\"מ" building for "קבוצת Y").
+When the two names differ, report the permit holder as the contractor and mention the
+marketing name alongside — do not silently pick one.
+
+**Two developers on one plot.** If the transaction feed carries more than one project
+name, the script sets `developer.multiple_projects_in_feed` and warns. Resolve it by
+house number *before* naming a contractor — otherwise you credit one builder with
+another's sales.
+
 ## Cross-checks worth running
 
 Cheap, and they catch a wrong number before it reaches the user:

@@ -55,6 +55,10 @@ FIELD_ALIASES = {
     "floors":   ["buildingfloors", "totalfloors"],
     "key":      ["keyvalue", "uniq_id", "uniqid", "id"],
     "trend":    ["trend_format", "trendformat"],
+    # The transaction feed does not reliably carry the developer, but some rows have
+    # carried a seller/developer string. Captured opportunistically; the authoritative
+    # source is the permit holder — see references/permit-lookup.md.
+    "developer": ["developername", "developer", "sellername", "seller", "yazam"],
 }
 
 # Deal-kind strings that mean "developer selling a brand-new apartment".
@@ -208,6 +212,7 @@ def normalise(rec, unmapped):
         "gush": g, "helka": h, "sub_parcel": tat,
         "gush_raw": gush_raw,
         "project": pick(lc, "project"),
+        "developer_in_feed": pick(lc, "developer"),
         "year_built": parse_number(pick(lc, "yearbuilt")),
         "building_floors": parse_number(pick(lc, "floors")),
         "key": pick(lc, "key"),
@@ -436,6 +441,9 @@ def main():
     p.add_argument("--helka")
     p.add_argument("--house-number", help="keep only deals at this house number")
     p.add_argument("--permit-units", type=int, help="units approved in the building permit")
+    p.add_argument("--developer", help="contractor / developer name (שם הקבלן) — always report it")
+    p.add_argument("--developer-source", help="where the developer name came from, e.g. "
+                                              '"בעל ההיתר, GIS עירוני" or "אתר הפרויקט"')
     p.add_argument("--from-year", default="auto", help="YYYY | auto | none")
     p.add_argument("--max-pages", type=int, default=25)
     p.add_argument("--sleep", type=float, default=1.2, help="seconds between pages (rate limits)")
@@ -516,6 +524,27 @@ def main():
     addresses = Counter(d["address"] for d in deals if d["address"])
     house_numbers = sorted({d["house_number"] for d in deals if d["house_number"]})
 
+    # Developer name is a required output field. Prefer what the caller supplied
+    # (looked up from the permit holder); fall back to anything the feed carried;
+    # otherwise say so out loud rather than dropping the field.
+    feed_devs = sorted({d["developer_in_feed"] for d in deals if d.get("developer_in_feed")})
+    projects = sorted({d["project"] for d in deals if d.get("project")})
+    if args.developer:
+        developer = {"name": args.developer,
+                     "source": args.developer_source or "סופק ע\"י המשתמש",
+                     "confidence": "high" if args.developer_source else "unverified"}
+    elif feed_devs:
+        developer = {"name": feed_devs[0], "source": "שדה יזם בנתוני מידע נדל\"ן",
+                     "confidence": "medium"}
+    else:
+        developer = {"name": None,
+                     "source": None,
+                     "confidence": "unknown",
+                     "note": "שם הקבלן לא אותר — יש לאתרו מבעל ההיתר (GIS עירוני), "
+                             "מאתר הפרויקט או לשאול את המשתמש. אין להשמיט את השדה מהדוח."}
+    developer["project_names_in_feed"] = projects
+    developer["multiple_projects_in_feed"] = len(projects) > 1
+
     out = {
         "ok": True,
         "query": query,
@@ -531,6 +560,7 @@ def main():
             "non_residential_excluded": not args.include_non_residential,
             "resale_excluded": not args.include_resale,
         },
+        "developer": developer,
         "addresses_seen": dict(addresses.most_common(10)),
         "house_numbers_seen": house_numbers,
         "multi_building_plot": len(house_numbers) > 1,
@@ -546,6 +576,12 @@ def main():
     }
     if not args.permit_units:
         out["caveats"].append("לא סופק מספר יחידות מההיתר — הושמטו אחוז מכירה, יתרה וצפי גמר.")
+    if not developer["name"]:
+        out["warnings"].append("שם הקבלן/היזם לא אותר — יש להשלימו לפני הפקת הדוח.")
+    if developer["multiple_projects_in_feed"]:
+        out["warnings"].append(
+            f"בפיד מופיעים {len(projects)} שמות פרויקט שונים ({', '.join(projects)}) — "
+            "ייתכן שהכתובת מכסה יותר מפרויקט/קבלן אחד. פצל לפי מספר בית.")
 
     js = json.dumps(out, ensure_ascii=False, indent=2)
     if args.out:
