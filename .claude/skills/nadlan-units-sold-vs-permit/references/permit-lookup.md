@@ -1,5 +1,10 @@
 # Finding the approved unit count (מספר יח"ד בהיתר)
 
+**Automated first:** `scripts/permit_lookup.py` handles the two dominant site families
+(Complot WebForms and municipal ArcGIS REST) end to end — it returns `permit_units`,
+`permit_holder` and `permit_number` with a full diagnostics trail. This file is the map
+for when that script reports it could not extract, and for committees on other vendors.
+
 There is **no single national public API** that returns "housing units approved at
 address X". Permits are issued by local committees (ועדות מקומיות) and published on
 each authority's own system. So this is a ladder, not a lookup.

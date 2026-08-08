@@ -86,14 +86,37 @@ Two diagnostics in the output to read before trusting the numbers:
 - `multi_building_plot` / `house_numbers_seen` — more than one house number means the parcel
   carries several buildings; rerun with `--house-number` before reporting anything.
 
-### Step 2 — Find the approved unit count (the "permit" side)
+### Step 2 — Find the approved unit count and permit holder (the "permit" side)
 
-Work down this ladder, stopping at the first source that gives a **number of housing units
-(מספר יח"ד) tied to this specific address**. Full lookup recipes:
-`references/permit-lookup.md`.
+**Try the automated fetch first** — it pulls both the unit count *and* the permit holder
+(which doubles as the developer for Step 2b) in one shot:
 
-1. **The city's own permit lookup / GIS layer** — most authoritative and usually has an
-   explicit יח"ד field. Search `"<city> איתור בקשות רישוי והיתרי בנייה"` or `"<city> GIS הנדסה"`.
+```bash
+python3 ~/.claude/skills/nadlan-units-sold-vs-permit/scripts/permit_lookup.py \
+  --city hodhasharon --street "הראשונים" --house 2 --out /tmp/permit.json
+```
+
+- `--city <slug>` targets `<slug>.complot.co.il` (the engineering-site product dozens of
+  committees run). Don't know the slug? Search `"<city> complot אתר הנדסי"` or
+  `"<city> איתור תיק בניין"` and pass the base URL with `--site` instead.
+- `--arcgis <services-root>` searches a municipal ArcGIS REST tree as a second strategy.
+- `--gush/--helka` work instead of street+house.
+
+Read the output *critically*, not mechanically:
+- `ok: true` → take `permit_units`, `permit_holder`, `permit_number`; quote
+  `permit_number` in the report as the source. If `confidence` is `low-conflicting`,
+  the file has several unit counts (multiple requests/buildings) — inspect `all_rows`
+  and pick by the newest issued permit (`הופק היתר`), or ask the user which.
+- `ok: false` → `diagnostics` says why. A 403/tunnel error means the environment blocks
+  Israeli sites (run it where egress is open). "could not identify search fields" or
+  "no tables with permit-like headers" means this committee's site differs from the known
+  layout — fall through the manual ladder below. **Extraction is heuristic (Hebrew header
+  keywords); a changed site yields a diagnostic, never a silently wrong number.**
+
+Manual ladder when the script comes up empty (full recipes: `references/permit-lookup.md`):
+
+1. **The city's permit lookup / GIS in the browser-ish way** — WebFetch the committee's
+   engineering site pages directly and read the permit table yourself.
 2. **מבא"ת** (`mavat.iplan.gov.il`) — the תב"ע covering the parcel. Its unit count is for
    the *plan area*, which may cover several buildings. Usable, but label it clearly as
    a plan-level figure, not a permit-level one.
@@ -108,13 +131,13 @@ report must state it — a plan-level number and a permit-level number are not t
 
 ### Step 2b — Find the developer (שם הקבלן) — always
 
-Pass it to the script so it lands in the JSON and both outputs:
-`--developer "י.נ.ו.ב בניה ופיתוח בע\"מ" --developer-source "בעל ההיתר, GIS עירוני"`
+Pass it to the sales script so it lands in the JSON and both outputs:
+`--developer "י.נ.ו.ב בניה ופיתוח בע\"מ" --developer-source "בעל ההיתר 2022318, אתר הנדסי הוד השרון"`
 
 Ladder, best first:
 
-1. **בעל ההיתר / מבקש ההיתר** in the municipal permit record from Step 2 — this is the
-   legally accurate answer and usually comes free with the unit count. Prefer it.
+1. **`permit_holder` from Step 2's `permit_lookup.py` output** — that IS בעל ההיתר, the
+   legally accurate answer, and you already have it. Use it and cite the permit number.
 2. **The project's own site or a listing portal** (yad1/yad2, madlan, project microsite).
    Fast and usually right, but it is *marketing* — the marketing brand and the permit holder
    are often different legal entities (a single-project SPV). Label it as such.
@@ -234,5 +257,7 @@ count there covers *added* units and the pre-existing units were never "sold" by
 
 - `references/data-sources.md` — endpoints, request bodies, response field dictionary, aliases, rate limits
 - `references/permit-lookup.md` — how to find the approved unit count, per source, with search recipes
-- `scripts/building_sales.py` — fetch + dedupe + analyze, emits JSON
+- `scripts/building_sales.py` — the "sold" side: fetch + dedupe + analyze, emits JSON
+- `scripts/permit_lookup.py` — the "permit" side: unit count + permit holder from the committee's engineering site (Complot / ArcGIS), emits JSON
 - `assets/report_template.html` — RTL HTML report template for the Artifact
+- `tests/` — integration, robustness and permit-lookup suites against local mock servers; run them after changing either script
