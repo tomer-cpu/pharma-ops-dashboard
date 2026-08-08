@@ -19,8 +19,14 @@ compatibility: "Requires bash with python3 (stdlib only) and outbound HTTPS to n
 
 # Units Sold vs. Building Permit (נמכרו מול היתר)
 
-Answers one question, precisely: **for a given building address, how many apartments have
-already been sold, out of how many were approved to be built there?**
+Answers one question, precisely: **for a given building address, how many apartments has
+the developer sold to their first buyer, out of how many were approved to be built there?**
+
+**Scope: first sale from the developer only (מכירת קבלן).** Second-hand deals are out of
+scope — they are not counted, not listed, and not shown in any table or chart. They exist in
+the output in exactly one place, `resale_diagnostics`, and only as a data-quality signal
+(see "The resale-only warning" below). Never present a resale figure as a headline.
+`--include-resale` exists but is off by default; use it only if the user explicitly asks.
 
 Two independent halves — never conflate them:
 
@@ -99,15 +105,13 @@ report must state it — a plan-level number and a permit-level number are not t
 
 The script already computes this; your job is to sanity-check it, not to redo it by hand.
 
-- **Distinct units sold** — deduplicated by תת-חלקה (the third component of the `GUSH`
-  field, e.g. `6638-45-**12**`, which *is* the apartment) and falling back to
-  (floor, rooms, area) when sub-parcel is absent. A unit that sold twice (developer → buyer,
-  then resale) counts as **one sold unit**, not two.
-- **First-hand vs. resale** — first-hand ("מכירת קבלן" / new-apartment deals) is what
-  measures the developer's absorption. Resales are excluded from absorption but reported
-  separately, and their presence is itself a signal (people are already flipping).
-- **Absorption** = distinct first-hand units ÷ approved units.
-- **Remaining** = approved − distinct first-hand units sold.
+- **Units sold** — the developer's **first sale** of each apartment. Deduplicated by
+  תת-חלקה (the third component of the `GUSH` field, e.g. `6638-45-**12**`, which *is* the
+  apartment), falling back to (floor, rooms, area) when sub-parcel is absent. Where a unit
+  has several deals, only the earliest מכירת קבלן is kept; every later deal is dropped into
+  `excluded_deals` with `reason: "resale"`.
+- **Absorption** = units sold by the developer ÷ approved units.
+- **Remaining** = approved − units sold by the developer.
 - **Rooms / floor breakdown** — which apartment types sold and which are left.
 - **Sales pace and forecast** — units per month over the trailing 6 months of first-hand
   deals, and projected months to sell out at that rate.
@@ -124,14 +128,14 @@ The user wants **both**, in this order:
 | מדד | ערך |
 |---|---|
 | יחידות בהיתר | 48 |
-| יחידות שנמכרו (מכירת קבלן) | 31 |
+| נמכרו ע"י הקבלן | 31 |
 | אחוז מכירה | 64.6% |
 | נותרו למכירה | 17 |
-| עסקאות יד שנייה | 3 |
 | קצב מכירה (6 ח' אחרונים) | 2.3 יח'/חודש |
 | צפי גמר מלאי | ~7 חודשים (כ-03/2027) |
 
-מקור היתר: <מקור> · מקור מכר: מידע נדל"ן, עודכן <תאריך>
+היקף: מכירות ראשונות מהקבלן בלבד · מקור היתר: <מקור>
+מקור מכר: מידע נדל"ן, עודכן <תאריך>
 ⚠️ <אזהרת פיגור רישום — ראה למטה>
 ```
 
@@ -166,6 +170,26 @@ Every output, chat and HTML alike, must carry these where relevant:
 6. **Deals below/above the building** — parking spots, storage, commercial units and land
    deals sometimes appear in the same feed. The script filters by
    `DEALNATUREDESCRIPTION`; check `"excluded_deals"` in the JSON and mention any surprises.
+
+## The resale-only warning — read this before reporting a number
+
+Classification of "first sale" rests entirely on the deal-kind text (`מכירת קבלן` and
+friends, in `FIRST_HAND_MARKERS`). So a **unit with deals but no identified contractor
+sale** is ambiguous: either the developer's sale was reported under a different description
+(⇒ the count is too low), or the unit genuinely only ever changed hands second-hand.
+
+The script counts these in
+`resale_diagnostics.units_with_deals_but_no_identified_contractor_sale` and raises a
+`warnings` entry. When that count is non-zero:
+
+1. Look at `excluded_deals` with `reason: "resale"` and read their `kind` strings.
+2. If a kind clearly denotes a new-apartment sale that the marker list missed, add it to
+   `FIRST_HAND_MARKERS` in the script and rerun.
+3. If it stays ambiguous, report the count as **"לפחות X"** and tell the user in one line
+   that N more units have deals whose type could not be confirmed as a developer sale.
+
+If `units_sold_first_hand` is 0 while deals exist, the classifier is broken for this
+building — do not report "0 sold". Inspect `--raw` and fix the markers first.
 
 ## New building detection
 

@@ -46,7 +46,7 @@ Names observed in `AllResults[]`. The script maps these through `FIELD_ALIASES` 
 |---|---|---|
 | `DEALDATETIME` / `DEALDATE` | transaction date | date of *reporting*, close to signing but not identical |
 | `DEALAMOUNT` | price in ₪ | comma-formatted string, e.g. `"2,450,000"` |
-| `DEALNATUREDESCRIPTION` | deal kind | `"מכירת קבלן"` = first-hand. Also carries חניה / מחסן / מסחר rows |
+| `DEALNATUREDESCRIPTION` | deal kind | **the field the whole analysis hinges on** — `"מכירת קבלן"` marks the developer's first sale, which is the only kind in scope. Also carries חניה / מחסן / מסחר rows |
 | `ASSETROOMNUM` | rooms | may be `"4"`, `"4.5"` or empty |
 | `FLOORNO` | floor | Hebrew strings like `"קרקע"` appear; parsed leniently |
 | `DEALNATURE` | area in m² | despite the name, this is the size, not the kind |
@@ -66,8 +66,12 @@ Names observed in `AllResults[]`. The script maps these through `FIELD_ALIASES` 
 - **Fuzzy resolution**: `GetDataByQuery` will silently resolve to the street or the city
   when the house number doesn't match. Always verify `ResultLable` and check
   `house_numbers_seen` in the output before believing the count.
-- **Deals ≠ units.** A unit sold twice appears twice. Dedup by תת-חלקה. This is the single
-  most common way to overcount a project's sales.
+- **Deals ≠ units.** A unit sold twice appears twice. Dedup by תת-חלקה, keep the earliest
+  מכירת קבלן, drop the rest. This is the single most common way to overcount a project's sales.
+- **Deal-kind wording is not a stable enum.** `DEALNATUREDESCRIPTION` is free-ish text and the
+  developer-sale wording has varied (`מכירת קבלן`, `דירה חדשה`, occasionally just `קבלן`).
+  `FIRST_HAND_MARKERS` in the script holds the list; when a building shows deals but zero
+  first sales, that list is the first thing to check against the `--raw` output.
 
 ## Fallback: GovMap real-estate API
 

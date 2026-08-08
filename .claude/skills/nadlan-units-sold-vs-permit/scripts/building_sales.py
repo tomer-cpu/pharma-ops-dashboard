@@ -282,7 +282,9 @@ def months_between(a, b):
     return max(0.0, (b.year - a.year) * 12 + (b.month - a.month) + (b.day - a.day) / 30.0)
 
 
-def analyse(deals, permit_units=None, pace_window_months=6):
+def analyse(deals, permit_units=None, pace_window_months=6, include_resale=False):
+    """Scope: the developer's first sale of each apartment. Resale is excluded by
+    design (--include-resale overrides) and only ever surfaces as a diagnostic."""
     now = datetime.now()
 
     units = defaultdict(list)
@@ -325,14 +327,11 @@ def analyse(deals, permit_units=None, pace_window_months=6):
         }
 
     sold_first_hand = len(first_hand_units)
+    resale_deal_count = (sum(len(ds) for _, ds in resale_only_units)
+                         + sum(len(units[k]) - 1 for k in resold_units))
     result = {
         "units_sold_first_hand": sold_first_hand,
-        "units_with_any_deal": len(units),
-        "resale_deals": sum(len(ds) for _, ds in resale_only_units)
-                        + sum(len(units[k]) - 1 for k in resold_units),
-        "units_resold_after_first_sale": len(resold_units),
-        "units_resale_only": len(resale_only_units),
-        "total_deals": len(deals),
+        "first_sale_deals": len(fh_dated),
         "first_deal": fh_dated[0]["_dt"].strftime("%Y-%m-%d") if fh_dated else None,
         "last_deal": fh_dated[-1]["_dt"].strftime("%Y-%m-%d") if fh_dated else None,
         "sales_pace_units_per_month": pace,
@@ -381,16 +380,44 @@ def analyse(deals, permit_units=None, pace_window_months=6):
             "n": len(prices),
         }
 
-    # Monthly first-hand sales curve, for the report chart.
+    # Monthly first-sale curve, for the report chart.
     monthly = Counter()
     for d in fh_dated:
         monthly[d["_dt"].strftime("%Y-%m")] += 1
     result["monthly_first_hand"] = dict(sorted(monthly.items()))
 
+    # The deal list IS the first-sale list: one row per apartment, the developer's sale.
+    reported = [d for _, _, d in first_hand_units] if not include_resale else deals
     result["deals"] = [
         {k: v for k, v in d.items() if not k.startswith("_")}
-        for d in sorted(deals, key=lambda x: x["_dt"] or datetime.min, reverse=True)
+        for d in sorted(reported, key=lambda x: x["_dt"] or datetime.min, reverse=True)
     ]
+
+    # Resale is out of scope by design — kept only as a data-quality signal, never
+    # as a headline number, and never mixed into anything above.
+    result["resale_diagnostics"] = {
+        "resale_deals_ignored": resale_deal_count,
+        "units_resold_after_first_sale": len(resold_units),
+        "units_with_deals_but_no_identified_contractor_sale": len(resale_only_units),
+    }
+
+    warnings = []
+    if resale_only_units:
+        warnings.append(
+            f"{len(resale_only_units)} יחידות עם עסקאות אך ללא עסקת 'מכירת קבלן' מזוהה — "
+            "ייתכן שמכירת הקבלן דווחה תחת תיאור אחר, ולכן ספירת המכירות עלולה להיות חסרה. "
+            "בדוק את excluded_deals עם reason=resale."
+        )
+    if sold_first_hand == 0 and deals:
+        warnings.append(
+            "לא זוהתה אף עסקת 'מכירת קבלן' למרות שקיימות עסקאות בכתובת — "
+            "בדוק את שדה DEALNATUREDESCRIPTION בפלט --raw והתאם את FIRST_HAND_MARKERS."
+        )
+    result["warnings"] = warnings
+
+    # Handed to main() so every ignored resale is still auditable in excluded_deals.
+    first_sale_ids = {id(d) for _, _, d in first_hand_units}
+    result["_resale_records"] = [d for d in deals if id(d) not in first_sale_ids]
     return result
 
 
@@ -413,6 +440,9 @@ def main():
     p.add_argument("--max-pages", type=int, default=25)
     p.add_argument("--sleep", type=float, default=1.2, help="seconds between pages (rate limits)")
     p.add_argument("--include-non-residential", action="store_true")
+    p.add_argument("--include-resale", action="store_true",
+                   help="also report second-hand deals (default: first sale from the "
+                        "developer only — resale is out of scope)")
     p.add_argument("--out", help="write result JSON here")
     p.add_argument("--raw", help="dump untouched API responses here")
     args = p.parse_args()
@@ -475,7 +505,14 @@ def main():
                                                           if not k.startswith("_")}} for d in drop]
         deals = keep
 
-    result = analyse(deals, permit_units=args.permit_units)
+    result = analyse(deals, permit_units=args.permit_units,
+                     include_resale=args.include_resale)
+    if not args.include_resale:
+        excluded += [{"reason": "resale", **{k: v for k, v in d.items()
+                                             if not k.startswith("_")}}
+                     for d in result["_resale_records"]]
+    result.pop("_resale_records", None)
+
     addresses = Counter(d["address"] for d in deals if d["address"])
     house_numbers = sorted({d["house_number"] for d in deals if d["house_number"]})
 
@@ -484,12 +521,15 @@ def main():
         "query": query,
         "fetched_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "source": "מידע נדל\"ן — nadlan.gov.il (עסקאות מדווחות לרשות המסים)",
+        "scope": ("מכירה ראשונה מהקבלן לרוכש הראשון בלבד — עסקאות יד שנייה אינן נספרות"
+                  if not args.include_resale else "כולל עסקאות יד שנייה"),
         "locator": {k: locator.get(k) for k in ("ObjectID", "DescLayerID", "Gush", "Parcel",
                                                 "ResultLable", "Value") if k in locator},
         "filters": {
             "from_year": from_year,
             "house_number": args.house_number,
             "non_residential_excluded": not args.include_non_residential,
+            "resale_excluded": not args.include_resale,
         },
         "addresses_seen": dict(addresses.most_common(10)),
         "house_numbers_seen": house_numbers,
@@ -497,6 +537,7 @@ def main():
         "excluded_deals": excluded,
         "unmapped_fields": dict(unmapped.most_common(25)),
         "caveats": [
+            "נספרות רק מכירות ראשונות מהקבלן לרוכש הראשון; עסקאות יד שנייה הוצאו מהניתוח.",
             "המספר הוא רצפה, לא מספר מדויק: עסקאות מדווחות לרשות המסים בפיגור של 1–6 חודשים.",
             "יחידות שלא נמכרו אינן בהכרח זמינות — ייתכן שהוקפאו ע\"י היזם או נמכרו וטרם דווחו.",
             "אם החלקה כוללת יותר ממבנה אחד, יש לפצל לפי מספר בית.",

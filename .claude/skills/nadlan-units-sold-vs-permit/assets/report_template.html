@@ -6,9 +6,14 @@
   never leave a placeholder visible, and never invent a number to fill one.
   Publish with the Artifact tool, favicon 🏗️.
 
+  Scope: first sale from the developer only. Never add a resale row, column, tag or
+  KPI to this report — resale is out of scope by the user's explicit instruction.
+  If resale_diagnostics shows units with no identified contractor sale, express it as
+  one line inside {{CAVEAT_ITEMS}} ("ייתכן שהמספר חסר"), not as a number of its own.
+
   Blocks that are optional:
     #permit-kpis  — drop if the approved unit count could not be found
-    #pace         — drop if there are fewer than 3 dated first-hand deals
+    #pace         — drop if there are fewer than 3 dated first sales
     #chart        — drop if monthly_first_hand has fewer than 2 months
     #deals        — keep; it is the evidence for every number above
 -->
@@ -107,11 +112,6 @@
   tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--border) 25%, transparent); }
   td.num { font-variant-numeric: tabular-nums; }
 
-  .tag { display: inline-block; font-size: .72rem; padding: .12rem .5rem; border-radius: 999px;
-         border: 1px solid currentColor; }
-  .tag.new { color: var(--teal); }
-  .tag.resale { color: var(--orange); }
-
   .caveats { background: var(--warn-bg); border-right: 4px solid var(--warn-bd);
              border-radius: 10px; padding: 1rem 1.15rem; margin-top: 1rem; }
   .caveats h3 { margin: 0 0 .5rem; font-size: .95rem; }
@@ -127,7 +127,8 @@
   <div class="wrap">
     <h1>{{ADDRESS}}</h1>
     <p class="sub">{{PROJECT_NAME_OR_EMPTY}} · גוש {{GUSH}} חלקה {{HELKA}}</p>
-    <p class="meta">נמכרו מול היתר בנייה · נתוני מכר: מידע נדל"ן, נשלפו {{FETCHED_AT}}</p>
+    <p class="meta">נמכרו מול היתר בנייה · מכירות ראשונות מהקבלן בלבד ·
+       נתוני מכר: מידע נדל"ן, נשלפו {{FETCHED_AT}}</p>
   </div>
 </header>
 
@@ -141,7 +142,7 @@
       <div class="note">{{PERMIT_SOURCE_SHORT}}</div>
     </div>
     <div class="kpi accent-teal">
-      <div class="label">נמכרו (מכירת קבלן)</div>
+      <div class="label">נמכרו ע"י הקבלן</div>
       <div class="value">{{SOLD_FIRST_HAND}}</div>
       <div class="note">לפחות — ראה הערות</div>
     </div>
@@ -194,7 +195,7 @@
 
   <!-- ============ Monthly curve ============ -->
   <section id="chart">
-    <h2>עסקאות מכירת קבלן לפי חודש</h2>
+    <h2>מכירות הקבלן לפי חודש</h2>
     <div class="bar-wrap">
       <div class="chart">
         <!-- one .col per month; height % = count / max_count * 100 -->
@@ -229,11 +230,14 @@
 
   <!-- ============ Deals ============ -->
   <section id="deals">
-    <h2>פירוט העסקאות ({{TOTAL_DEALS}})</h2>
+    <h2>פירוט המכירות מהקבלן ({{SOLD_FIRST_HAND}})</h2>
+    <p style="font-size:.83rem;color:var(--text-mid);margin:.2rem 0 .8rem">
+      שורה אחת לכל דירה — עסקת המכירה הראשונה מהקבלן לרוכש. עסקאות יד שנייה אינן מוצגות.
+    </p>
     <div class="scroll">
       <table>
         <thead>
-          <tr><th>תאריך</th><th>סוג</th><th>חדרים</th><th>קומה</th>
+          <tr><th>תאריך</th><th>חדרים</th><th>קומה</th>
               <th>שטח (מ"ר)</th><th>מחיר</th><th>₪ למ"ר</th><th>תת-חלקה</th></tr>
         </thead>
         <tbody>{{DEAL_ROWS}}</tbody>
