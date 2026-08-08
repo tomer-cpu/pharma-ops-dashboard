@@ -26,6 +26,20 @@ Confirmed example — **Tel Aviv-Yafo**:
 Searchable by request number, address, or gush/helka; shows all licensing requests
 and permits in the city on one map.
 
+Confirmed example — **Hod Hasharon** (Complot engineering site):
+- איתור תיק בניין: `http://hodhasharon.complot.co.il/newengine/Pages/buildings2.aspx`
+- מחלקת רישוי: `http://hodhasharon.complot.co.il/general_info/Pages/rishuy.aspx`
+Search by street + house number or gush/helka; the building file (תיק בניין) lists the
+permit requests and issued permits with their unit counts and permit holder.
+
+**The Complot family.** Dozens of committees run the same "אתר הנדסי" product on
+`<city>.complot.co.il` (also seen: `rishonlezion`, `br7`, `mz-hasharon`,
+`emekhayarden`) — if the city's own site doesn't surface a permit search, try
+`https://<city>.complot.co.il` directly. Its permit tables use exactly the columns
+this skill needs: `בעל ההיתר`, `כתובת המבנה`, `גוש/חלקה`, `כמות יח"ד`.
+Other common vendors: `bartech-net.co.il` (e.g. `drs.bartech-net.co.il`) and
+per-committee sites like `handasa.hefer.org.il/SearchPermitApplication`.
+
 Most municipal maps are **ArcGIS Server** underneath, which means the data is
 queryable directly. Once you find the city's map viewer, look for its services root
 (commonly `.../arcgis/rest/services`) and probe:
