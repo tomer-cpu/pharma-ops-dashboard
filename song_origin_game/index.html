@@ -163,6 +163,29 @@
   .ghost:hover{color:var(--brass);border-color:var(--brass)}
   .ghost:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 
+  /* ---------- scan to listen ---------- */
+  .scan{
+    display:flex;gap:16px;align-items:center;flex-wrap:wrap;
+    border:1px solid var(--line);border-radius:3px;background:var(--surface);
+    padding:14px 16px;
+  }
+  .scan.origin{border-color:var(--brass);background:color-mix(in srgb,var(--brass) 7%,var(--surface))}
+  .qr-tile{
+    background:#FFFFFF;padding:9px;border-radius:2px;line-height:0;flex:none;
+    box-shadow:0 6px 16px -12px rgba(0,0,0,.6);
+  }
+  .qr-tile img{width:124px;height:124px;display:block;image-rendering:pixelated}
+  .scan-copy{display:flex;flex-direction:column;gap:3px;min-width:190px;flex:1}
+  .scan-copy b{font-size:16px}
+  .scan-copy span{font-size:14px;color:var(--muted)}
+  .scan-copy a{
+    font-size:14px;color:var(--teal);text-decoration:none;
+    border-block-end:1px solid color-mix(in srgb,var(--teal) 45%,transparent);
+    align-self:flex-start;margin-top:4px;
+  }
+  .scan-copy a:hover{border-block-end-color:var(--teal)}
+  .scan-copy a:focus-visible{outline:2px solid var(--teal);outline-offset:3px}
+
   /* ---------- reveal ---------- */
   .reveal{
     border:1px solid var(--line);border-radius:3px;background:var(--surface);
@@ -224,7 +247,10 @@
   .bar.none{background:var(--rose)}
   .recap-song b{font-weight:700}
   .recap-song span{color:var(--muted);font-size:14px;display:block}
-  .recap-pts{font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px}
+  .recap-pts{font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px;text-align:end}
+  .recap-links{display:flex;gap:10px;margin-top:3px}
+  .recap-links a{font-size:13px;color:var(--teal);text-decoration:none}
+  .recap-links a:hover{text-decoration:underline}
 
   footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:14px;max-width:62ch}
   footer a{color:var(--teal)}
@@ -244,7 +270,7 @@
     <div class="brand">
       <div class="eyebrow">משחק זיהוי מקורות</div>
       <h1>השיר עשה עלייה</h1>
-      <p class="tagline">כל שיר כאן הוא להיט עברי מוכר — אבל הלחן נולד במקום אחר. נחשו מאיזו ארץ הגיע, ומי ביצע את המקור.</p>
+      <p class="tagline">סרקו את הקוד, הקשיבו לשיר, ונחשו מאיזו ארץ הגיע הלחן ומי ביצע אותו במקור. אחרי התשובה — סורקים שוב ושומעים את המקור עצמו.</p>
     </div>
     <div class="scoreboard" aria-label="לוח ניקוד">
       <div class="stat"><b id="s-score">0</b><span>ניקוד</span></div>
@@ -256,10 +282,11 @@
   <main id="stage"></main>
 
   <footer>
-    כל הזוגות במשחק מבוססים על מקורות מתועדים (ויקיפדיה, הספרייה הלאומית, ארכיוני עיתונות). קישורי ההאזנה נפתחים בחיפוש בספוטיפיי או ביוטיוב — חוץ מהסבב הראשון, שבו מופיעים הקישורים המקוריים.
+    כל הזוגות במשחק מבוססים על מקורות מתועדים (ויקיפדיה, הספרייה הלאומית, ארכיוני עיתונות). קודי ה־QR נוצרים בדפדפן ונפתחים ביוטיוב — חוץ מהסבב של "עיניים שלי", שבו הקודים מובילים ישירות לרצועות בספוטיפיי.
   </footer>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
 (function(){
   "use strict";
@@ -397,6 +424,46 @@
       : "https://www.youtube.com/results?search_query=" + q;
   }
 
+  function listenTarget(entry, fallbackQuery){
+    if (entry.link) return { url: entry.link, where: "ספוטיפיי" };
+    return { url: searchUrl("youtube", fallbackQuery), where: "יוטיוב" };
+  }
+
+  function qrImage(url){
+    if (typeof qrcode !== "function") return null;
+    try {
+      var q = qrcode(0, "M");
+      q.addData(url);
+      q.make();
+      var img = new Image();
+      img.src = q.createDataURL(4, 1);
+      img.alt = "קוד QR להאזנה";
+      return img;
+    } catch (e) { return null; }
+  }
+
+  function scanPanel(opts){
+    var box = el("section", "scan" + (opts.origin ? " origin" : ""));
+    var img = qrImage(opts.url);
+    if (img){
+      var tile = el("div", "qr-tile");
+      tile.appendChild(img);
+      box.appendChild(tile);
+    }
+    var copy = el("div", "scan-copy");
+    copy.appendChild(el("b", null, opts.title));
+    copy.appendChild(el("span", null, img
+      ? "סרקו את הקוד עם מצלמת הטלפון — " + opts.subject + " ייפתח ב" + opts.where + "."
+      : opts.subject + " ייפתח ב" + opts.where + "."));
+    var a = el("a", null, img ? "או פתחו כאן, במכשיר הזה" : "פתחו כאן");
+    a.href = opts.url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    copy.appendChild(a);
+    box.appendChild(copy);
+    return box;
+  }
+
   function artistOptions(song){
     var pool = (EXTRA_ARTISTS[song.orig.country] || []).slice();
     var others = SONGS
@@ -491,6 +558,14 @@
     wrap.style.flexDirection = "column";
 
     wrap.appendChild(recordCard(song, state.index + 1, state.deck.length));
+
+    var heTarget = listenTarget(song.he, song.he.title + " " + song.he.artist);
+    wrap.appendChild(scanPanel({
+      url: heTarget.url,
+      where: heTarget.where,
+      title: "השמיעו את השיר",
+      subject: "הגרסה העברית"
+    }));
 
     /* step 1 — country */
     var s1 = el("section", "step");
@@ -637,6 +712,15 @@
     credit("הגרסה העברית", he.title + " · " + he.artist + " · " + he.year);
     box.appendChild(credits);
 
+    var origTarget = listenTarget(o, o.artist + " " + o.title);
+    box.appendChild(scanPanel({
+      url: origTarget.url,
+      where: origTarget.where,
+      title: "עכשיו תשמעו את המקור",
+      subject: "השיר המקורי",
+      origin: true
+    }));
+
     var listen = el("div", "listen");
     function link(text, href){
       var a = el("a", null, text);
@@ -645,9 +729,8 @@
       a.rel = "noopener noreferrer";
       listen.appendChild(a);
     }
-    link("האזנה לגרסה העברית", he.link || searchUrl("spotify", he.title + " " + he.artist));
-    link("האזנה למקור", o.link || searchUrl("spotify", o.title + " " + o.artist));
-    link("שניהם ביוטיוב", searchUrl("youtube", o.artist + " " + o.title));
+    link("הגרסה העברית שוב", he.link || searchUrl("youtube", he.title + " " + he.artist));
+    link("המקור בספוטיפיי", o.link || searchUrl("spotify", o.title + " " + o.artist));
     box.appendChild(listen);
 
     var last = state.index === state.deck.length - 1;
@@ -702,6 +785,17 @@
       var mid = el("div", "recap-song");
       mid.appendChild(el("b", null, res.song.he.title + " · " + res.song.he.artist));
       mid.appendChild(el("span", null, "המקור: " + res.song.orig.artist + " · " + res.song.orig.country + " · " + res.song.orig.title));
+      var links = el("div", "recap-links");
+      [["האזנה לעברית", listenTarget(res.song.he, res.song.he.title + " " + res.song.he.artist).url],
+       ["האזנה למקור", listenTarget(res.song.orig, res.song.orig.artist + " " + res.song.orig.title).url]
+      ].forEach(function(pair){
+        var a = el("a", null, pair[0]);
+        a.href = pair[1];
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        links.appendChild(a);
+      });
+      mid.appendChild(links);
       row.appendChild(mid);
       row.appendChild(el("div", "recap-pts", res.points + " נק'"));
       recap.appendChild(row);
