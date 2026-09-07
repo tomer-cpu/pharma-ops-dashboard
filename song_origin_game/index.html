@@ -1,0 +1,715 @@
+<title>השיר עשה עלייה</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;800&family=Suez+One&display=swap">
+<style>
+  :root{
+    --bg:#E7E3D8;
+    --bg-deep:#DAD5C6;
+    --surface:#F6F3EB;
+    --ink:#151E1C;
+    --muted:#5D6C67;
+    --line:#CBC4B3;
+    --brass:#9C6410;
+    --brass-soft:#E7D6B4;
+    --teal:#0E5A55;
+    --rose:#A22F52;
+    --good:#1E6B41;
+    --shade:rgba(21,30,28,.13);
+    --disc-a:#1B2422;
+    --disc-b:#2C3835;
+    --font-display:"Suez One","Noto Sans Hebrew",Georgia,serif;
+    --font-body:"Assistant","Noto Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0C1413;
+      --bg-deep:#080D0C;
+      --surface:#15211F;
+      --ink:#EAE5D8;
+      --muted:#94A39D;
+      --line:#2A3A37;
+      --brass:#E5A33F;
+      --brass-soft:#3A2E17;
+      --teal:#4FC0AE;
+      --rose:#EB7B99;
+      --good:#5FC98D;
+      --shade:rgba(0,0,0,.5);
+      --disc-a:#05100E;
+      --disc-b:#16211F;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0C1413;
+    --bg-deep:#080D0C;
+    --surface:#15211F;
+    --ink:#EAE5D8;
+    --muted:#94A39D;
+    --line:#2A3A37;
+    --brass:#E5A33F;
+    --brass-soft:#3A2E17;
+    --teal:#4FC0AE;
+    --rose:#EB7B99;
+    --good:#5FC98D;
+    --shade:rgba(0,0,0,.5);
+    --disc-a:#05100E;
+    --disc-b:#16211F;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    direction:rtl;
+    background:var(--bg);
+    background-image:radial-gradient(120% 80% at 50% 0%,var(--bg) 0%,var(--bg-deep) 100%);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:17px;
+    line-height:1.6;
+    min-height:100vh;
+    padding:28px 18px 56px;
+  }
+  .page{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+  #stage{display:flex;flex-direction:column;gap:22px}
+
+  /* ---------- masthead ---------- */
+  .masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .brand{display:flex;flex-direction:column;gap:2px}
+  .eyebrow{
+    font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);
+    font-weight:600;
+  }
+  h1{
+    font-family:var(--font-display);
+    font-size:clamp(30px,6vw,44px);
+    line-height:1.05;margin:0;text-wrap:balance;font-weight:400;
+  }
+  .tagline{color:var(--muted);font-size:15px;max-width:46ch}
+
+  .scoreboard{display:flex;gap:0;border:1px solid var(--line);border-radius:2px;background:var(--surface);overflow:hidden}
+  .stat{padding:8px 14px;display:flex;flex-direction:column;align-items:center;min-width:76px}
+  .stat + .stat{border-inline-start:1px solid var(--line)}
+  .stat b{font-size:20px;font-variant-numeric:tabular-nums;font-weight:700;line-height:1.2}
+  .stat span{font-size:11px;letter-spacing:.08em;color:var(--muted)}
+
+  /* ---------- the record ---------- */
+  .record{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:3px;
+    box-shadow:0 18px 34px -26px var(--shade);
+    padding:22px;
+    display:grid;
+    grid-template-columns:150px 1fr;
+    gap:22px;
+    align-items:center;
+  }
+  .disc{
+    width:150px;height:150px;border-radius:50%;
+    background:
+      repeating-radial-gradient(circle at 50% 50%,var(--disc-a) 0 2px,var(--disc-b) 2px 4px);
+    display:grid;place-items:center;position:relative;
+    box-shadow:0 8px 20px -10px var(--shade);
+  }
+  .disc::after{
+    content:"";position:absolute;width:9px;height:9px;border-radius:50%;
+    background:var(--bg);border:1px solid var(--line);
+  }
+  .disc .label{
+    width:96px;height:96px;border-radius:50%;
+    background:var(--brass);
+    color:#12100B;
+    display:grid;place-items:center;text-align:center;
+    font-family:var(--font-display);font-size:19px;line-height:1;padding:10px;
+    padding-block-end:26px;font-variant-numeric:tabular-nums;
+    box-shadow:inset 0 0 0 3px rgba(0,0,0,.12);
+  }
+  .track-meta{display:flex;flex-direction:column;gap:6px;min-width:0}
+  .round-tag{font-size:12px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+  .track-title{font-family:var(--font-display);font-size:clamp(26px,5vw,38px);line-height:1.1;margin:0;font-weight:400}
+  .track-by{font-size:18px;color:var(--ink)}
+  .track-by em{font-style:normal;color:var(--muted)}
+  .hintline{font-size:14px;color:var(--teal);min-height:0}
+
+  /* ---------- questions ---------- */
+  .step{display:flex;flex-direction:column;gap:12px}
+  .step h2{
+    font-family:var(--font-body);font-size:15px;font-weight:700;margin:0;
+    letter-spacing:.02em;display:flex;align-items:center;gap:10px;
+  }
+  .step h2 .num{
+    width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+    background:var(--brass-soft);color:var(--brass);font-size:12px;font-weight:800;flex:none;
+  }
+  .options{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+  .opt{
+    font:inherit;text-align:start;cursor:pointer;
+    background:var(--surface);color:var(--ink);
+    border:1px solid var(--line);border-radius:2px;
+    padding:13px 15px;transition:border-color .15s,transform .12s,background .15s;
+  }
+  .opt:hover:not(:disabled){border-color:var(--brass);transform:translateY(-1px)}
+  .opt:disabled{cursor:default}
+  .opt:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+  .opt.picked{border-color:var(--ink)}
+  .opt.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 12%,var(--surface));font-weight:600}
+  .opt.wrong{border-color:var(--rose);background:color-mix(in srgb,var(--rose) 10%,var(--surface));text-decoration:line-through;text-decoration-color:var(--rose)}
+  .opt.dim{opacity:.5}
+
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .ghost{
+    font:inherit;cursor:pointer;background:none;color:var(--muted);
+    border:1px dashed var(--line);border-radius:2px;padding:8px 13px;font-size:14px;
+  }
+  .ghost:hover{color:var(--brass);border-color:var(--brass)}
+  .ghost:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+
+  /* ---------- reveal ---------- */
+  .reveal{
+    border:1px solid var(--line);border-radius:3px;background:var(--surface);
+    padding:20px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden;
+  }
+  .reveal::before{
+    content:"";position:absolute;inset-block:0;inset-inline-start:0;width:4px;background:var(--brass);
+  }
+  .verdict{font-size:14px;font-weight:700;letter-spacing:.02em;color:var(--muted)}
+  .verdict .pts{color:var(--brass);font-variant-numeric:tabular-nums}
+  .stamp{
+    display:inline-flex;align-items:center;gap:8px;align-self:flex-start;
+    border:2px solid var(--rose);color:var(--rose);border-radius:2px;
+    padding:5px 12px;font-family:var(--font-display);font-size:15px;
+    transform:rotate(-1.6deg);
+  }
+  .origin-title{font-family:var(--font-display);font-size:24px;margin:0;line-height:1.2;font-weight:400}
+  .origin-by{font-size:17px}
+  .story{font-size:15px;color:var(--muted);max-width:62ch;margin:0}
+  .credits{
+    display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--muted);
+    border-top:1px solid var(--line);padding-top:12px;
+  }
+  .credits b{color:var(--ink);font-weight:600}
+  .listen{display:flex;flex-wrap:wrap;gap:8px}
+  .listen a{
+    font-size:13px;text-decoration:none;color:var(--ink);
+    border:1px solid var(--line);border-radius:999px;padding:5px 13px;
+    transition:border-color .15s,color .15s;
+  }
+  .listen a:hover{border-color:var(--teal);color:var(--teal)}
+  .listen a:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+
+  .next{
+    font:inherit;font-weight:700;cursor:pointer;align-self:flex-start;
+    background:var(--ink);color:var(--bg);border:none;border-radius:2px;padding:12px 22px;
+  }
+  .next:hover{background:var(--brass);color:#12100B}
+  .next:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+
+  /* ---------- summary ---------- */
+  .final{display:flex;flex-direction:column;gap:18px}
+  .final-head{
+    background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:26px;
+    display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;
+  }
+  .final-score{font-family:var(--font-display);font-size:54px;line-height:1;color:var(--brass);font-variant-numeric:tabular-nums}
+  .final-rank{font-size:19px;font-weight:700}
+  .final-note{color:var(--muted);font-size:15px}
+  .recap{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+  .recap-row{
+    display:grid;grid-template-columns:8px 1fr auto;gap:14px;align-items:center;
+    padding:12px 16px;background:var(--surface);font-size:15px;
+  }
+  .recap-row + .recap-row{border-top:1px solid var(--line)}
+  .bar{width:8px;height:100%;min-height:34px;border-radius:1px;background:var(--line)}
+  .bar.full{background:var(--good)}
+  .bar.half{background:var(--brass)}
+  .bar.none{background:var(--rose)}
+  .recap-song b{font-weight:700}
+  .recap-song span{color:var(--muted);font-size:14px;display:block}
+  .recap-pts{font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px}
+
+  footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:14px;max-width:62ch}
+  footer a{color:var(--teal)}
+
+  @media (max-width:560px){
+    .record{grid-template-columns:1fr;justify-items:center;text-align:center}
+    .track-meta{align-items:center}
+    .stamp{align-self:center}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+</style>
+
+<div class="page">
+  <header class="masthead">
+    <div class="brand">
+      <div class="eyebrow">משחק זיהוי מקורות</div>
+      <h1>השיר עשה עלייה</h1>
+      <p class="tagline">כל שיר כאן הוא להיט עברי מוכר — אבל הלחן נולד במקום אחר. נחשו מאיזו ארץ הגיע, ומי ביצע את המקור.</p>
+    </div>
+    <div class="scoreboard" aria-label="לוח ניקוד">
+      <div class="stat"><b id="s-score">0</b><span>ניקוד</span></div>
+      <div class="stat"><b id="s-round">1/12</b><span>סבב</span></div>
+      <div class="stat"><b id="s-best">0</b><span>שיא</span></div>
+    </div>
+  </header>
+
+  <main id="stage"></main>
+
+  <footer>
+    כל הזוגות במשחק מבוססים על מקורות מתועדים (ויקיפדיה, הספרייה הלאומית, ארכיוני עיתונות). קישורי ההאזנה נפתחים בחיפוש בספוטיפיי או ביוטיוב — חוץ מהסבב הראשון, שבו מופיעים הקישורים המקוריים.
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var SONGS = [
+    {
+      he:{title:"עיניים שלי", artist:"יהודה פוליקר", year:1985, lyr:"מילים עבריות: יעקב גלעד",
+          link:"https://open.spotify.com/track/6JmH1wsNxUKKZlpyZ7FItL"},
+      orig:{title:"Μη μου θυμώνεις μάτια μου", tr:"מִי מוּ תִ'ימוֹניס מַאטְיָה מוּ", artist:"יאניס פולופולוס",
+            country:"יוון", year:1969, composer:"סטברוס קויומדזיס",
+            link:"https://open.spotify.com/track/0hDzVPXRSJYkkXUCjBTKd8"},
+      hint:"הלחן בא ממדינה ים־תיכונית, והכלי המוביל בו הוא בוזוקי.",
+      story:"הלחן של סטברוס קויומדזיס הפך בישראל לשיר הפרידה המזוהה ביותר עם פוליקר; גם יורגוס דאלארס שר אותו ביוונית."
+    },
+    {
+      he:{title:"תודה", artist:"חיים משה", year:1986, lyr:"מילים עבריות: עוזי חיטמן"},
+      orig:{title:"Όλα καλά", tr:"אוֹלָה קָאלָה", artist:"יורגוס דאלארס", country:"יוון", year:1974,
+            composer:"סטברוס קויומדזיס"},
+      hint:"במקור זהו שיר פוליטי משנת 1974, אחרי נפילת משטר הקולונלים.",
+      story:"חיים משה שמע את השיר בהופעה של דאלארס במדיסון סקוור גארדן, חזר ארצה וביקש מעוזי חיטמן מילים עבריות. מה שהיה שיר מחאה הפך לשיר הודיה."
+    },
+    {
+      he:{title:"אלינור", artist:"זוהר ארגוב", year:1980, lyr:"מילים עבריות: ג'קי מקייטן"},
+      orig:{title:"Υπάρχω", tr:"אִיפַּארְחוֹ", artist:"סטליוס קזנג'ידיס", country:"יוון", year:1977,
+            composer:"כריסטוס ניקולופולוס"},
+      hint:"הזמר המקורי נחשב לקול הגדול של המעמד העממי בארצו.",
+      story:"השיר הפותח של אלבום הבכורה של זוהר ארגוב, ואחד השירים שהתניעו את פריצת הזמר המזרחי לקדמת הבמה."
+    },
+    {
+      he:{title:"איילת אהבים", artist:"שלישיית גשר הירקון", year:1965, lyr:"מילים עבריות: נעמי שמר"},
+      orig:{title:"Ο Υμηττός", tr:"אוֹ אִימִיטוֹס", artist:"מאנוס חדג'ידקיס", country:"יוון", year:1963,
+            composer:"מאנוס חדג'ידקיס"},
+      hint:"המלחין המקורי זכה באוסקר על שיר מסרט על נמל ים.",
+      story:"נעמי שמר לא ידעה יוונית: היא לקחה את הלחן של חדג'ידקיס וכתבה לו מילים חדשות לגמרי, מספר משלי. אריק איינשטיין, יהורם גאון ובני אמדורסקי שרו."
+    },
+    {
+      he:{title:"האישה שאיתי", artist:"דוד ברוזה", year:1983, lyr:"מילים עבריות: יהונתן גפן"},
+      orig:{title:"La mujer que yo quiero", tr:"לָה מוּחֶר קֶה יוֹ קְייֶרוֹ", artist:"ז'ואן מנואל סראט",
+            country:"ספרד", year:1971, composer:"ז'ואן מנואל סראט"},
+      hint:"הלחן בא משפה שברוזה גדל עליה בילדותו — לא ים־תיכונית־מזרחית.",
+      story:"ברוזה חזר ממלחמת לבנון הראשונה והביא ליהונתן גפן תרגום מילולי, בבקשה שיהפוך אותו לשיר אהבה. האלבום שנקרא על שם השיר הפך לאחד המצליחים בתולדות המוזיקה הישראלית."
+    },
+    {
+      he:{title:"אהבה בת עשרים", artist:"יוסי בנאי", year:1972, lyr:"תרגום: נעמי שמר"},
+      orig:{title:"La chanson des vieux amants", tr:"לָה שַׁנְסוֹן דֶה וְייֶ אָמַאן", artist:"ז'אק ברל",
+            country:"בלגיה", year:1967, composer:"ז'אק ברל"},
+      hint:"שר בצרפתית — אבל נולד וגדל צפונית לצרפת.",
+      story:"אחד משירי האהבה הבוגרים ביותר בזמר העברי. ברל הוא בלגי, גם אם השפה והבמה שלו היו פריזאיות לחלוטין."
+    },
+    {
+      he:{title:"אל תלכי מכאן", artist:"יוסי בנאי", year:1974},
+      orig:{title:"Ne me quitte pas", tr:"נֶה מֶה קִיטֶה פָּה", artist:"ז'אק ברל", country:"בלגיה", year:1959,
+            composer:"ז'אק ברל"},
+      hint:"אותו יוצר של \"אהבה בת עשרים\" — ואותה ארץ שממנה בא.",
+      story:"אחד השירים המבוצעים ביותר בעולם, עם גרסאות באנגלית, בעברית וביפנית. בנאי הביא אותו לעברית בשיא תקופת שירי הצרפתית שלו."
+    },
+    {
+      he:{title:"לא אבקש את ידך", artist:"יוסי בנאי", year:1969, lyr:"תרגום: נעמי שמר"},
+      orig:{title:"La non-demande en mariage", tr:"לָה נוֹן־דֶמַאנְד אָן מַארְיָאז'", artist:"ז'ורז' ברסאנס",
+            country:"צרפת", year:1966, composer:"ז'ורז' ברסאנס"},
+      hint:"היוצר המקורי היה אנרכיסט עם שפם, גיטרה ומקטרת — וצרפתי לגמרי.",
+      story:"מניפסט נגד מוסד הנישואין. בנאי הקדיש לברסאנס מופע שלם ב־1969 בשם \"אין אהבות שמחות\", ונעמי שמר תרגמה עבורו."
+    },
+    {
+      he:{title:"תעצרו את העולם", artist:"זהבה בן", year:1995, lyr:"מילים עבריות: יוני רועה"},
+      orig:{title:"לחן של איברהים טטליסס", artist:"איברהים טטליסס", country:"טורקיה", year:1990,
+            composer:"איברהים טטליסס"},
+      hint:"סגנון האַרַבֶּסְק, ומדינה שגובלת ביוון.",
+      story:"רוב האלבום נבנה על לחנים טורקיים עם מילים של יוני רועה. הוא נמכר במאות אלפי עותקים והפך את זהבה בן לזמרת המזרחית הגדולה של שנות התשעים."
+    },
+    {
+      he:{title:"כוכבי מרום", artist:"עופר לוי", year:1990},
+      orig:{title:"לחן של איברהים טטליסס", artist:"איברהים טטליסס", country:"טורקיה", year:1985,
+            composer:"איברהים טטליסס"},
+      hint:"אותו זמר־ענק ששיריו הולבשו בעברית גם אצל איציק קלה ואלי לוזון.",
+      story:"טטליסס הוא ככל הנראה המלחין הלועזי המושמע ביותר במוזיקה הים־תיכונית הישראלית — לרוב בלי שהקהל ידע את שמו."
+    },
+    {
+      he:{title:"שוב", artist:"בר סיידו", year:2021},
+      orig:{title:"Камин", tr:"קָמִין", artist:"Amin & Jony", country:"רוסיה", year:2020,
+            composer:"Amin & Jony"},
+      hint:"להיט רשת עכשווי בשפה סלאבית, שהתפוצץ ב־2020.",
+      story:"הגרסה העברית של בר סיידו אספה מיליוני צפיות והוכיחה שגם ב־2021 להיטים עוברים לעברית — הפעם דרך טיקטוק ולא דרך תקליט."
+    },
+    {
+      he:{title:"האיטלקי", artist:"דורון מזר", year:1984},
+      orig:{title:"L'Italiano", tr:"לִיטַלְיָאנוֹ", artist:"טוטו קוטוניו", country:"איטליה", year:1983,
+            composer:"טוטו קוטוניו"},
+      hint:"הופיע לראשונה בפסטיבל סן־רמו.",
+      story:"\"Lasciatemi cantare\" הפך ל\"תנו לי לשיר\" — דורון מזר הקליט את הגרסה העברית שנה אחרי המקור, וזו נדבקה לדור שלם."
+    }
+  ];
+
+  var EXTRA_ARTISTS = {
+    "יוון":["חריס אלכסיו","גליקריה","נאנה מושקורי","מיקיס תיאודורקיס"],
+    "טורקיה":["סזן אקסו","טרקן","באריש מנצ'ו","מוסלום גורסס"],
+    "ספרד":["חוליו איגלסיאס","פאקו דה לוסיה","רוסיו חוראדו"],
+    "צרפת":["שארל אזנבור","אדית פיאף","ז'ורז' מוסטקי","סרז' גינסבורג"],
+    "בלגיה":["אדמו","ז'אן ז'אק גולדמן"],
+    "איטליה":["אדריאנו צ'לנטאנו","דומניקו מודוניו","מינה","לוצ'ו דאלה"],
+    "רוסיה":["ולדימיר ויסוצקי","אלה פוגצ'ובה","ליובה אוספנסקיה"]
+  };
+
+  var ALL_COUNTRIES = ["יוון","טורקיה","ספרד","צרפת","בלגיה","איטליה","רוסיה"];
+  var PTS_COUNTRY = 10, PTS_ARTIST = 15, PTS_BOTH = 5, HINT_COST = 5;
+
+  var stage = document.getElementById("stage");
+  var elScore = document.getElementById("s-score");
+  var elRound = document.getElementById("s-round");
+  var elBest = document.getElementById("s-best");
+
+  var state = null;
+
+  function shuffle(list){
+    var a = list.slice();
+    for (var i = a.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function readBest(){
+    try { return parseInt(localStorage.getItem("aliyah-best") || "0", 10) || 0; }
+    catch (e) { return 0; }
+  }
+  function writeBest(v){
+    try { localStorage.setItem("aliyah-best", String(v)); } catch (e) {}
+  }
+
+  function searchUrl(service, query){
+    var q = encodeURIComponent(query);
+    return service === "spotify"
+      ? "https://open.spotify.com/search/" + q
+      : "https://www.youtube.com/results?search_query=" + q;
+  }
+
+  function artistOptions(song){
+    var pool = (EXTRA_ARTISTS[song.orig.country] || []).slice();
+    var others = SONGS
+      .filter(function(s){ return s.orig.artist !== song.orig.artist; })
+      .map(function(s){ return s.orig.artist; });
+    pool = pool.concat(others);
+    var seen = {}, picks = [];
+    pool = shuffle(pool);
+    for (var i = 0; i < pool.length && picks.length < 3; i++){
+      var name = pool[i];
+      if (name === song.orig.artist || seen[name]) continue;
+      seen[name] = true;
+      picks.push(name);
+    }
+    return shuffle(picks.concat([song.orig.artist]));
+  }
+
+  function countryOptions(song){
+    var others = shuffle(ALL_COUNTRIES.filter(function(c){ return c !== song.orig.country; })).slice(0, 3);
+    return shuffle(others.concat([song.orig.country]));
+  }
+
+  function newGame(){
+    state = {
+      deck: shuffle(SONGS),
+      index: 0,
+      score: 0,
+      results: [],
+      best: readBest()
+    };
+    startRound();
+  }
+
+  function startRound(){
+    var song = state.deck[state.index];
+    state.round = {
+      song: song,
+      countries: countryOptions(song),
+      artists: artistOptions(song),
+      pickedCountry: null,
+      pickedArtist: null,
+      hinted: false,
+      points: 0
+    };
+    render();
+  }
+
+  function updateHud(){
+    elScore.textContent = state.score;
+    elRound.textContent = Math.min(state.index + 1, state.deck.length) + "/" + state.deck.length;
+    elBest.textContent = state.best;
+  }
+
+  function el(tag, cls, text){
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  function recordCard(song, roundNo, total){
+    var card = el("section", "record");
+    var disc = el("div", "disc");
+    var label = el("div", "label");
+    label.textContent = song.he.year;
+    disc.appendChild(label);
+    card.appendChild(disc);
+
+    var meta = el("div", "track-meta");
+    meta.appendChild(el("div", "round-tag", "סבב " + roundNo + " מתוך " + total));
+    meta.appendChild(el("h2", "track-title", song.he.title));
+    var by = el("p", "track-by");
+    by.appendChild(document.createTextNode(song.he.artist + " "));
+    var em = el("em", null, "· " + song.he.year);
+    by.appendChild(em);
+    meta.appendChild(by);
+    var hint = el("p", "hintline");
+    hint.id = "hintline";
+    meta.appendChild(hint);
+    card.appendChild(meta);
+    return card;
+  }
+
+  function render(){
+    updateHud();
+    var r = state.round, song = r.song;
+    stage.textContent = "";
+
+    var wrap = el("div", "step");
+    wrap.style.display = "flex";
+    wrap.style.gap = "22px";
+    wrap.style.flexDirection = "column";
+
+    wrap.appendChild(recordCard(song, state.index + 1, state.deck.length));
+
+    /* step 1 — country */
+    var s1 = el("section", "step");
+    var h1 = el("h2");
+    h1.appendChild(el("span", "num", "1"));
+    h1.appendChild(document.createTextNode("מאיזו ארץ הגיע הלחן?"));
+    s1.appendChild(h1);
+    var g1 = el("div", "options");
+    r.countries.forEach(function(country){
+      var b = el("button", "opt", country);
+      b.type = "button";
+      if (r.pickedCountry){
+        b.disabled = true;
+        if (country === song.orig.country) b.className = "opt right";
+        else if (country === r.pickedCountry) b.className = "opt wrong";
+        else b.className = "opt dim";
+      } else {
+        b.addEventListener("click", function(){ answerCountry(country); });
+      }
+      g1.appendChild(b);
+    });
+    s1.appendChild(g1);
+    wrap.appendChild(s1);
+
+    /* step 2 — artist */
+    if (r.pickedCountry){
+      var s2 = el("section", "step");
+      var h2 = el("h2");
+      h2.appendChild(el("span", "num", "2"));
+      h2.appendChild(document.createTextNode("ומי ביצע את השיר המקורי?"));
+      s2.appendChild(h2);
+      var g2 = el("div", "options");
+      r.artists.forEach(function(name){
+        var b = el("button", "opt", name);
+        b.type = "button";
+        if (r.pickedArtist){
+          b.disabled = true;
+          if (name === song.orig.artist) b.className = "opt right";
+          else if (name === r.pickedArtist) b.className = "opt wrong";
+          else b.className = "opt dim";
+        } else {
+          b.addEventListener("click", function(){ answerArtist(name); });
+        }
+        g2.appendChild(b);
+      });
+      s2.appendChild(g2);
+      wrap.appendChild(s2);
+    }
+
+    /* hint */
+    if (!r.pickedArtist){
+      var bar = el("div", "toolbar");
+      var hintBtn = el("button", "ghost", r.hinted ? "הרמז נוצל" : "רמז (־" + HINT_COST + " נקודות)");
+      hintBtn.type = "button";
+      hintBtn.disabled = r.hinted;
+      hintBtn.addEventListener("click", useHint);
+      bar.appendChild(hintBtn);
+      wrap.appendChild(bar);
+    }
+
+    stage.appendChild(wrap);
+
+    if (r.hinted){
+      var hl = document.getElementById("hintline");
+      if (hl) hl.textContent = "רמז: " + song.hint;
+    }
+    if (r.pickedArtist) stage.appendChild(revealCard());
+  }
+
+  function useHint(){
+    state.round.hinted = true;
+    state.score = Math.max(0, state.score - HINT_COST);
+    state.round.points -= HINT_COST;
+    render();
+  }
+
+  function answerCountry(country){
+    var r = state.round;
+    r.pickedCountry = country;
+    if (country === r.song.orig.country){
+      state.score += PTS_COUNTRY;
+      r.points += PTS_COUNTRY;
+      r.countryRight = true;
+    }
+    render();
+  }
+
+  function answerArtist(name){
+    var r = state.round;
+    r.pickedArtist = name;
+    if (name === r.song.orig.artist){
+      state.score += PTS_ARTIST;
+      r.points += PTS_ARTIST;
+      r.artistRight = true;
+    }
+    if (r.countryRight && r.artistRight){
+      state.score += PTS_BOTH;
+      r.points += PTS_BOTH;
+    }
+    state.results.push({
+      song: r.song,
+      countryRight: !!r.countryRight,
+      artistRight: !!r.artistRight,
+      points: r.points
+    });
+    render();
+  }
+
+  function verdictText(r){
+    if (r.countryRight && r.artistRight) return "ארץ וזמר — הכול נכון.";
+    if (r.countryRight) return "את הארץ קלעת, את הזמר פספסת.";
+    if (r.artistRight) return "את הזמר זיהית, את הארץ לא.";
+    return "לא הפעם.";
+  }
+
+  function revealCard(){
+    var r = state.round, o = r.song.orig, he = r.song.he;
+    var box = el("section", "reveal");
+
+    var v = el("p", "verdict");
+    v.appendChild(document.createTextNode(verdictText(r) + " "));
+    var pts = el("span", "pts", (r.points >= 0 ? "+" : "") + r.points + " נקודות");
+    v.appendChild(pts);
+    box.appendChild(v);
+
+    var stamp = el("div", "stamp", "המקור: " + o.country + " · " + o.year);
+    box.appendChild(stamp);
+
+    var t = el("h3", "origin-title", o.title);
+    box.appendChild(t);
+    if (o.tr) box.appendChild(el("p", "story", "בתעתיק: " + o.tr));
+    box.appendChild(el("p", "origin-by", o.artist));
+    box.appendChild(el("p", "story", r.song.story));
+
+    var credits = el("div", "credits");
+    function credit(label, value){
+      var d = el("div");
+      d.appendChild(el("b", null, label + ": "));
+      d.appendChild(document.createTextNode(value));
+      credits.appendChild(d);
+    }
+    credit("לחן", o.composer);
+    if (he.lyr) credit("גרסה עברית", he.lyr.replace(/^.*?: /, ""));
+    credit("הגרסה העברית", he.title + " · " + he.artist + " · " + he.year);
+    box.appendChild(credits);
+
+    var listen = el("div", "listen");
+    function link(text, href){
+      var a = el("a", null, text);
+      a.href = href;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      listen.appendChild(a);
+    }
+    link("האזנה לגרסה העברית", he.link || searchUrl("spotify", he.title + " " + he.artist));
+    link("האזנה למקור", o.link || searchUrl("spotify", o.title + " " + o.artist));
+    link("שניהם ביוטיוב", searchUrl("youtube", o.artist + " " + o.title));
+    box.appendChild(listen);
+
+    var last = state.index === state.deck.length - 1;
+    var next = el("button", "next", last ? "לסיכום" : "לשיר הבא");
+    next.type = "button";
+    next.addEventListener("click", function(){
+      if (last){ finish(); }
+      else { state.index++; startRound(); }
+    });
+    box.appendChild(next);
+    return box;
+  }
+
+  function rankFor(score, max){
+    var p = score / max;
+    if (p >= 0.85) return "אתה חופר בארכיונים, לא מקשיב לרדיו";
+    if (p >= 0.65) return "אוזן טובה. קלטת את רוב המסלולים";
+    if (p >= 0.45) return "ניחוש משכיל. יש בסיס";
+    if (p >= 0.25) return "שמעת את השירים, לא את הסיפורים";
+    return "כל השירים האלה חדשים לך — וזה הכיף";
+  }
+
+  function finish(){
+    var max = state.deck.length * (PTS_COUNTRY + PTS_ARTIST + PTS_BOTH);
+    if (state.score > state.best){
+      state.best = state.score;
+      writeBest(state.score);
+    }
+    state.index = state.deck.length - 1;
+    updateHud();
+    stage.textContent = "";
+
+    var wrap = el("div", "final");
+    var head = el("div", "final-head");
+    head.appendChild(el("div", "final-score", state.score + " / " + max));
+    head.appendChild(el("div", "final-rank", rankFor(state.score, max)));
+    var correct = state.results.filter(function(x){ return x.countryRight && x.artistRight; }).length;
+    head.appendChild(el("div", "final-note",
+      "זיהוי מלא ב־" + correct + " מתוך " + state.results.length + " שירים · השיא שלך: " + state.best));
+    var again = el("button", "next", "סיבוב נוסף");
+    again.type = "button";
+    again.style.alignSelf = "center";
+    again.addEventListener("click", newGame);
+    head.appendChild(again);
+    wrap.appendChild(head);
+
+    var recap = el("div", "recap");
+    state.results.forEach(function(res){
+      var row = el("div", "recap-row");
+      var cls = res.countryRight && res.artistRight ? "full" : (res.countryRight || res.artistRight ? "half" : "none");
+      row.appendChild(el("div", "bar " + cls));
+      var mid = el("div", "recap-song");
+      mid.appendChild(el("b", null, res.song.he.title + " · " + res.song.he.artist));
+      mid.appendChild(el("span", null, "המקור: " + res.song.orig.artist + " · " + res.song.orig.country + " · " + res.song.orig.title));
+      row.appendChild(mid);
+      row.appendChild(el("div", "recap-pts", res.points + " נק'"));
+      recap.appendChild(row);
+    });
+    wrap.appendChild(recap);
+    stage.appendChild(wrap);
+  }
+
+  newGame();
+})();
+</script>
