@@ -1,0 +1,38 @@
+// Written only by the ingest-ops-metrics function (service role); readable by admins.
+{
+  "name": "SyncBatch",
+  "description": "Audit log / idempotency record of every batch received from csv_sync",
+  "type": "object",
+  "properties": {
+    "batch_id": {
+      "type": "string"
+    },
+    "source_file": {
+      "type": "string"
+    },
+    "file_sha256": {
+      "type": "string"
+    },
+    "created_count": {
+      "type": "integer"
+    },
+    "updated_count": {
+      "type": "integer"
+    },
+    "received_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "batch_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "write": false
+  }
+}

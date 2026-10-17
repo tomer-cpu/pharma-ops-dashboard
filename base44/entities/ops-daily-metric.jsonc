@@ -1,0 +1,206 @@
+// Written only by the ingest-ops-metrics function (service role); readable by admins.
+{
+  "name": "OpsDailyMetric",
+  "description": "Daily operational metrics synced from the Windows CSV exports",
+  "type": "object",
+  "properties": {
+    "record_key": {
+      "type": "string",
+      "description": "date|site|product_line (unique upsert key)"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "site": {
+      "type": "string"
+    },
+    "product_line": {
+      "type": "string"
+    },
+    "batches_produced": {
+      "type": "integer"
+    },
+    "batches_rejected": {
+      "type": "integer"
+    },
+    "compliance_audits": {
+      "type": "integer"
+    },
+    "compliance_passed": {
+      "type": "integer"
+    },
+    "rft_batches": {
+      "type": "integer"
+    },
+    "total_deviations": {
+      "type": "integer"
+    },
+    "critical_deviations": {
+      "type": "integer"
+    },
+    "capa_open": {
+      "type": "integer"
+    },
+    "investigations": {
+      "type": "integer"
+    },
+    "audit_findings": {
+      "type": "integer"
+    },
+    "supply_units": {
+      "type": "integer"
+    },
+    "demand_units": {
+      "type": "integer"
+    },
+    "otif_orders_total": {
+      "type": "integer"
+    },
+    "otif_orders_met": {
+      "type": "integer"
+    },
+    "sla_total_orders": {
+      "type": "integer"
+    },
+    "sla_met_orders": {
+      "type": "integer"
+    },
+    "scheduled_batches": {
+      "type": "integer"
+    },
+    "completed_scheduled": {
+      "type": "integer"
+    },
+    "production_output_units": {
+      "type": "integer"
+    },
+    "backorders": {
+      "type": "integer"
+    },
+    "total_orders": {
+      "type": "integer"
+    },
+    "forecast_demand": {
+      "type": "integer"
+    },
+    "actual_demand": {
+      "type": "integer"
+    },
+    "waste_units": {
+      "type": "integer"
+    },
+    "total_produced_units": {
+      "type": "integer"
+    },
+    "rework_units": {
+      "type": "integer"
+    },
+    "theoretical_yield": {
+      "type": "number"
+    },
+    "actual_yield": {
+      "type": "number"
+    },
+    "capa_closed_days": {
+      "type": "number"
+    },
+    "investigation_days": {
+      "type": "number"
+    },
+    "lead_time_days": {
+      "type": "number"
+    },
+    "response_time_hours": {
+      "type": "number"
+    },
+    "order_cycle_days": {
+      "type": "number"
+    },
+    "available_capacity": {
+      "type": "number"
+    },
+    "used_capacity": {
+      "type": "number"
+    },
+    "cogs_amount": {
+      "type": "number"
+    },
+    "revenue_amount": {
+      "type": "number"
+    },
+    "inventory_value": {
+      "type": "number"
+    },
+    "carrying_cost_rate": {
+      "type": "number"
+    },
+    "cost_per_batch_amount": {
+      "type": "number"
+    },
+    "copq_amount": {
+      "type": "number"
+    },
+    "scrap_cost_amount": {
+      "type": "number"
+    },
+    "planned_cost": {
+      "type": "number"
+    },
+    "actual_cost": {
+      "type": "number"
+    },
+    "oee_score": {
+      "type": "number"
+    },
+    "downtime_hours": {
+      "type": "number"
+    },
+    "available_hours": {
+      "type": "number"
+    },
+    "changeover_hours": {
+      "type": "number"
+    },
+    "line_output": {
+      "type": "number"
+    },
+    "line_capacity": {
+      "type": "number"
+    },
+    "supplier_risk": {
+      "type": "number"
+    },
+    "stockout_risk_score": {
+      "type": "number"
+    },
+    "batch_failure_prob": {
+      "type": "number"
+    },
+    "service_risk": {
+      "type": "number"
+    },
+    "source_file": {
+      "type": "string",
+      "description": "CSV file the record came from"
+    },
+    "batch_id": {
+      "type": "string",
+      "description": "Sync batch that last wrote the record"
+    }
+  },
+  "required": [
+    "record_key",
+    "date",
+    "site",
+    "product_line"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "write": false
+  }
+}

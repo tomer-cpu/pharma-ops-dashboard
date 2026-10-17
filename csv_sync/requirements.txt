@@ -1,0 +1,3 @@
+# The service itself uses only the Python standard library.
+# Needed only for CSV_SYNC_SOURCE_TYPE=smb (pulling from the Windows server over SMB3):
+smbprotocol>=1.13.0
