@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>אגרושתיל · הצעת שתילים</title>
+    <link rel="stylesheet" href="/static/agro/agro.css">
+    <style>
+        body { background: var(--bg); }
+        .box { max-width: 520px; margin: 0 auto; padding: 0 16px 40px; }
+        .hero { background: var(--brand-dark); color: #fff; padding: 22px 16px 26px; text-align: center; margin-bottom: -14px; }
+        .hero .logo { margin: 0 auto 8px; width: 52px; height: 52px; font-size: 28px; }
+        .hero h1 { font-size: 21px; }
+        .hero p { opacity: .85; font-size: 15px; }
+        .offer-item { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow); }
+        .offer-item .veg { font-weight: 700; font-size: 17px; }
+        .offer-item .meta { color: var(--muted); font-size: 14px; }
+        .choice { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .choice button { padding: 11px 8px; border-radius: 10px; border: 2px solid var(--border); background: #fff; font-weight: 600; font-size: 15px; cursor: pointer; }
+        .choice .y.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+        .choice .n.on { background: var(--red); border-color: var(--red); color: #fff; }
+        .all { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 22px 0 14px; }
+        .big { padding: 14px; font-size: 16px; font-weight: 700; border-radius: 12px; justify-content: center; }
+        textarea { min-height: 80px; font-family: inherit; font-size: 15px; }
+        .done { text-align: center; padding: 30px 10px; }
+        .done .ic { font-size: 54px; }
+    </style>
+</head>
+<body>
+<div class="hero">
+    <div class="logo">🌱</div>
+    <h1 id="title">הצעת שתילים מאגרושתיל</h1>
+    <p id="subtitle">טוען…</p>
+</div>
+<div class="box">
+    <div class="all" id="all-btns" style="display:none">
+        <button class="btn primary big" id="all-yes">✓ מעוניין/ת בהכול</button>
+        <button class="btn big" id="all-no">✗ לא מעוניין/ת</button>
+    </div>
+    <div id="items"></div>
+    <div id="form-rest" style="display:none">
+        <label style="font-size:14px;color:var(--muted)">הערה / כמות / מועד שתילה מבוקש (לא חובה)</label>
+        <textarea id="note" placeholder="למשל: מעוניין ב-5,000 שתילים לסוף החודש"></textarea>
+        <button class="btn primary big" id="submit" style="width:100%;margin-top:12px">שליחת תשובה</button>
+        <div class="msg-box" id="err"></div>
+    </div>
+    <div class="done card" id="done" style="display:none">
+        <div class="ic">🌿</div>
+        <h2>תודה! התשובה התקבלה</h2>
+        <p class="desc" id="done-text" style="margin-top:6px">נציג אגרושתיל יחזור אליך בהקדם.</p>
+        <button class="btn" id="edit">עריכת התשובה</button>
+    </div>
+</div>
+<script>
+(() => {
+    const $ = (s) => document.querySelector(s);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const token = location.pathname.split('/').pop();
+    const answers = {};
+    let data;
+
+    function render() {
+        $('#items').innerHTML = data.items.map((i) => `
+            <div class="offer-item" data-id="${i.id}">
+                <div class="veg">🌿 שתילי ${esc(i.vegetable)}</div>
+                <div class="meta">${[i.variety && 'זן ' + esc(i.variety), i.quantity && 'כמות: ' + esc(i.quantity), i.notes && esc(i.notes)].filter(Boolean).join(' · ')}</div>
+                <div class="choice">
+                    <button class="y ${answers[i.id] === 'interested' ? 'on' : ''}" data-v="interested">✓ מעוניין/ת</button>
+                    <button class="n ${answers[i.id] === 'not_interested' ? 'on' : ''}" data-v="not_interested">✗ לא כרגע</button>
+                </div>
+            </div>`).join('');
+    }
+
+    async function submit() {
+        const missing = data.items.filter((i) => !answers[i.id]);
+        if (missing.length) {
+            $('#err').className = 'msg-box show bad';
+            $('#err').textContent = `נא לסמן תשובה גם עבור: ${missing.map((i) => i.vegetable).join(', ')}`;
+            return;
+        }
+        $('#submit').disabled = true;
+        try {
+            const res = await fetch(`/api/agro/public/${encodeURIComponent(token)}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ answers, note: $('#note').value }),
+            });
+            if (!res.ok) throw new Error((await res.json()).detail || 'שגיאה');
+            const yes = data.items.filter((i) => answers[i.id] === 'interested').map((i) => i.vegetable);
+            $('#done-text').textContent = yes.length
+                ? `סימנת עניין ב: ${yes.join(', ')}. נציג אגרושתיל יחזור אליך בהקדם עם פרטים ומחיר.`
+                : 'רשמנו שאינך מעוניין/ת כרגע. נשמח לעמוד לשירותך בעונה הבאה.';
+            ['#items', '#form-rest', '#all-btns'].forEach((s) => $(s).style.display = 'none');
+            $('#done').style.display = '';
+            window.scrollTo(0, 0);
+        } catch (err) {
+            $('#err').className = 'msg-box show bad';
+            $('#err').textContent = err.message;
+        } finally { $('#submit').disabled = false; }
+    }
+
+    $('#items').addEventListener('click', (e) => {
+        const b = e.target.closest('button[data-v]');
+        if (!b) return;
+        answers[+b.closest('.offer-item').dataset.id] = b.dataset.v;
+        $('#err').className = 'msg-box';
+        render();
+    });
+    $('#all-yes').addEventListener('click', () => { data.items.forEach((i) => answers[i.id] = 'interested'); render(); submit(); });
+    $('#all-no').addEventListener('click', () => { data.items.forEach((i) => answers[i.id] = 'not_interested'); render(); submit(); });
+    $('#submit').addEventListener('click', submit);
+    $('#edit').addEventListener('click', () => {
+        $('#done').style.display = 'none';
+        ['#items', '#form-rest'].forEach((s) => $(s).style.display = '');
+        $('#all-btns').style.display = 'grid';
+    });
+
+    (async () => {
+        try {
+            const res = await fetch(`/api/agro/public/${encodeURIComponent(token)}`);
+            if (!res.ok) throw new Error('ההצעה לא נמצאה או שפג תוקפה');
+            data = await res.json();
+            $('#title').textContent = `שלום ${data.name} 👋`;
+            if (!data.items.length) { $('#subtitle').textContent = 'אין כרגע הצעה פעילה עבורך.'; return; }
+            $('#subtitle').textContent = 'הכנו עבורך הצעה לשתילים. סמנו במה אתם מעוניינים:';
+            data.items.forEach((i) => { if (i.status === 'interested' || i.status === 'not_interested') answers[i.id] = i.status; });
+            $('#note').value = data.note || '';
+            render();
+            $('#all-btns').style.display = 'grid';
+            $('#form-rest').style.display = '';
+        } catch (err) { $('#subtitle').textContent = err.message; }
+    })();
+})();
+</script>
+</body>
+</html>

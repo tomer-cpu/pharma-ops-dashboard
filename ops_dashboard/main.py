@@ -1,6 +1,6 @@
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +10,8 @@ from ops_dashboard.config import STATIC_DIR
 from ops_dashboard.data.database import init_db
 from ops_dashboard.data.mock_generator import seed_mock_data
 from ops_dashboard.api import quality, service, cost, efficiency, risk, summary, filters, settings
+from ops_dashboard.agro import router as agro_router
+from ops_dashboard.agro.db import init_agro_db
 
 
 # -- Embedding middleware -------------------------------------------------
@@ -37,6 +39,7 @@ class EmbedMiddleware(BaseHTTPMiddleware):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    init_agro_db()
     seeded = seed_mock_data()
     if seeded:
         print("  Mock data seeded successfully (9,000+ records)")
@@ -70,6 +73,8 @@ app.include_router(risk.router, prefix="/api/risk", tags=["Risk"])
 app.include_router(summary.router, prefix="/api/summary", tags=["Summary"])
 app.include_router(filters.router, prefix="/api/filters", tags=["Filters"])
 app.include_router(settings.router, prefix="/api/settings", tags=["Settings"])
+app.include_router(agro_router.admin, prefix="/api/agro", tags=["Agroshtil offers"])
+app.include_router(agro_router.public, prefix="/api/agro", tags=["Agroshtil offers (public)"])
 
 # Serve frontend static files
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -84,3 +89,17 @@ async def root():
 async def embed():
     """Embeddable version - cleaner layout without header/footer."""
     return FileResponse(os.path.join(STATIC_DIR, "embed.html"))
+
+
+# -- Agroshtil grower offers -----------------------------------------------
+
+@app.get("/agro", dependencies=[Depends(agro_router.require_admin)])
+async def agro_admin():
+    """Admin page: import growers, send seedling offers, track replies."""
+    return FileResponse(os.path.join(STATIC_DIR, "agro", "index.html"))
+
+
+@app.get("/o/{token}")
+async def agro_offer_page(token: str):
+    """Public page a grower opens from the offer message to answer."""
+    return FileResponse(os.path.join(STATIC_DIR, "agro", "offer.html"))
